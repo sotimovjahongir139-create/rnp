@@ -9,6 +9,9 @@ __pycache__/
 backend/.env
 *.env.local
 
+# cPanel push real configs (NEVER commit secrets; keep the .sample.php tracked)
+deploy/cpanel/*.config.php
+
 # Build output
 frontend/dist/
 frontend/.vite/
