@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { requireAuth } from '../middleware/auth.middleware.js';
+import { getKpi, getTopModels, getSabablari, getTop10, getTrend } from '../controllers/qc.controller.js';
+const router = Router();
+router.use(requireAuth);
+router.get('/kpi', getKpi);
+router.get('/trend', getTrend);
+router.get('/top-models', getTopModels);
+router.get('/sabablari', getSabablari);
+router.get('/top10', getTop10);
+export default router;
