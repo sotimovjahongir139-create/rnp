@@ -1,232 +1,112 @@
--- ═══════════════════════════════════════════════════════════════
---  RNP Analytics Database Schema
--- ═══════════════════════════════════════════════════════════════
+-- database/schema.sql — rnp_analytics (PostgreSQL). Idempotent: safe to re-run.
 
-CREATE DATABASE IF NOT EXISTS rnp_analytics CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE rnp_analytics;
-
--- ─── USERS ──────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS users (
-  id            INT UNSIGNED    NOT NULL AUTO_INCREMENT,
-  username      VARCHAR(50)     NOT NULL UNIQUE,
-  password_hash VARCHAR(255)    NOT NULL,
-  full_name     VARCHAR(100)    NOT NULL,
-  role          ENUM('admin','manager') NOT NULL DEFAULT 'manager',
-  department_id INT UNSIGNED    NULL,
-  is_active     TINYINT(1)      NOT NULL DEFAULT 1,
-  created_at    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  INDEX idx_username (username),
-  INDEX idx_role     (role)
-) ENGINE=InnoDB;
+  id            SERIAL PRIMARY KEY,
+  username      TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  role          TEXT NOT NULL DEFAULT 'manager' CHECK (role IN ('admin','manager')),
+  is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
--- ─── DEPARTMENTS ─────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS departments (
-  id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  name       VARCHAR(100) NOT NULL UNIQUE,
-  code       VARCHAR(20)  NOT NULL UNIQUE,
-  is_active  TINYINT(1)   NOT NULL DEFAULT 1,
-  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  INDEX idx_code (code)
-) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS call_stats (
+  period_type           TEXT NOT NULL CHECK (period_type IN ('daily','monthly')),
+  period_date           DATE NOT NULL,
+  manager_name          TEXT NOT NULL,
+  total_calls           INT  NOT NULL DEFAULT 0,
+  incoming_answered     INT  NOT NULL DEFAULT 0,
+  outgoing_answered     INT  NOT NULL DEFAULT 0,
+  missed_clients        INT  NOT NULL DEFAULT 0,
+  recalled_clients      INT  NOT NULL DEFAULT 0,
+  not_recalled_clients  INT  NOT NULL DEFAULT 0,
+  answer_rate           NUMERIC NOT NULL DEFAULT 0,
+  recall_rate           NUMERIC NOT NULL DEFAULT 0,
+  no_recall_pct         NUMERIC NOT NULL DEFAULT 0,
+  avg_recall_minutes    NUMERIC NOT NULL DEFAULT 0,
+  h_09_11 INT NOT NULL DEFAULT 0, h_11_13 INT NOT NULL DEFAULT 0,
+  h_13_15 INT NOT NULL DEFAULT 0, h_15_17 INT NOT NULL DEFAULT 0,
+  h_17_19 INT NOT NULL DEFAULT 0, h_19_21 INT NOT NULL DEFAULT 0,
+  h_21_23 INT NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (period_type, period_date, manager_name)
+);
 
--- ─── PRODUCTION ORDERS ───────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS production_orders (
-  id               INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  department_id    INT UNSIGNED NOT NULL,
-  order_date       DATE         NOT NULL,
-  status           ENUM('Normal','Kritik','Malumot yoq') NOT NULL DEFAULT 'Normal',
-  total_orders     INT UNSIGNED NOT NULL DEFAULT 0,
-  completed_orders INT UNSIGNED NOT NULL DEFAULT 0,
-  remaining_orders INT UNSIGNED NOT NULL DEFAULT 0,
-  active_cards     INT UNSIGNED NOT NULL DEFAULT 0,
-  efficiency       DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-  avg_cycle_days   DECIMAL(4,1) NULL,
-  min_max_days     VARCHAR(20)  NULL,
-  incoming_week    INT UNSIGNED NOT NULL DEFAULT 0,
-  completed_week   INT UNSIGNED NOT NULL DEFAULT 0,
-  created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_dept_date (department_id, order_date),
-  INDEX idx_order_date    (order_date),
-  INDEX idx_dept_id       (department_id),
-  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS telegram_stats (
+  report_date              DATE PRIMARY KEY,
+  unique_contacts          INT NOT NULL DEFAULT 0,
+  unique_talks             INT NOT NULL DEFAULT 0,
+  unique_leads             INT NOT NULL DEFAULT 0,
+  total_events             INT NOT NULL DEFAULT 0,
+  client_messages          INT NOT NULL DEFAULT 0,
+  manager_messages         INT NOT NULL DEFAULT 0,
+  client_turns             INT NOT NULL DEFAULT 0,
+  answered_turns           INT NOT NULL DEFAULT 0,
+  waiting_turns            INT NOT NULL DEFAULT 0,
+  response_rate            NUMERIC NOT NULL DEFAULT 0,
+  avg_response_minutes     NUMERIC,
+  median_response_minutes  NUMERIC,
+  updated_at               TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
--- ─── SKU ASSIGNMENTS ─────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS sku_assignments (
-  id            INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  department_id INT UNSIGNED NOT NULL,
-  model_code    VARCHAR(10)  NOT NULL,
-  model_label   VARCHAR(50)  NOT NULL,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_dept_model (department_id, model_code),
-  FOREIGN KEY (department_id) REFERENCES departments(id)
-) ENGINE=InnoDB;
-
--- ─── AMO CALL MONTHLY STATS ──────────────────────────────────────
--- Written by: amocrm_april_report.py (adapted)
-CREATE TABLE IF NOT EXISTS amo_call_monthly_stats (
-  id                  INT UNSIGNED   NOT NULL AUTO_INCREMENT,
-  stat_month          DATE           NOT NULL COMMENT 'First day of month',
-  manager_name        VARCHAR(100)   NOT NULL,
-  total_calls         INT UNSIGNED   NOT NULL DEFAULT 0,
-  incoming_calls      INT UNSIGNED   NOT NULL DEFAULT 0,
-  outgoing_calls      INT UNSIGNED   NOT NULL DEFAULT 0,
-  missed_calls        INT UNSIGNED   NOT NULL DEFAULT 0,
-  recalled_calls      INT UNSIGNED   NOT NULL DEFAULT 0,
-  not_recalled        INT UNSIGNED   NOT NULL DEFAULT 0,
-  answer_rate         DECIMAL(5,2)   NOT NULL DEFAULT 0.00,
-  recall_rate         DECIMAL(5,2)   NOT NULL DEFAULT 0.00,
-  avg_recall_minutes  DECIMAL(8,2)   NULL,
-  created_at          DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at          DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_month_manager (stat_month, manager_name),
-  INDEX idx_stat_month (stat_month)
-) ENGINE=InnoDB;
-
--- ─── AMO CALL DAILY STATS ────────────────────────────────────────
--- Written by: amocrm_april_report.py (adapted)
-CREATE TABLE IF NOT EXISTS amo_call_daily_stats (
-  id                  INT UNSIGNED   NOT NULL AUTO_INCREMENT,
-  stat_date           DATE           NOT NULL,
-  manager_name        VARCHAR(100)   NOT NULL,
-  total_calls         INT UNSIGNED   NOT NULL DEFAULT 0,
-  incoming_calls      INT UNSIGNED   NOT NULL DEFAULT 0,
-  outgoing_calls      INT UNSIGNED   NOT NULL DEFAULT 0,
-  missed_calls        INT UNSIGNED   NOT NULL DEFAULT 0,
-  recalled_calls      INT UNSIGNED   NOT NULL DEFAULT 0,
-  not_recalled        INT UNSIGNED   NOT NULL DEFAULT 0,
-  answer_rate         DECIMAL(5,2)   NOT NULL DEFAULT 0.00,
-  recall_rate         DECIMAL(5,2)   NOT NULL DEFAULT 0.00,
-  avg_recall_minutes  DECIMAL(8,2)   NULL,
-  created_at          DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at          DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_date_manager (stat_date, manager_name),
-  INDEX idx_stat_date (stat_date)
-) ENGINE=InnoDB;
-
--- ─── CRM HOURLY STATS ────────────────────────────────────────────
--- Written by: amocrm_april_report.py (adapted)
-CREATE TABLE IF NOT EXISTS crm_hourly_stats (
-  id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  stat_date  DATE         NOT NULL,
-  hour_slot  VARCHAR(10)  NOT NULL COMMENT '09-11, 11-13...',
-  call_count INT UNSIGNED NOT NULL DEFAULT 0,
-  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_date_slot (stat_date, hour_slot),
-  INDEX idx_stat_date (stat_date)
-) ENGINE=InnoDB;
-
--- ─── TELEGRAM DAILY STATS ────────────────────────────────────────
--- Written by: amocrm_telegram_response.py (adapted)
-CREATE TABLE IF NOT EXISTS telegram_daily_stats (
-  id                      INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-  stat_date               DATE          NOT NULL UNIQUE,
-  total_conversations     INT UNSIGNED  NOT NULL DEFAULT 0,
-  answered_turns          INT UNSIGNED  NOT NULL DEFAULT 0,
-  waiting_turns           INT UNSIGNED  NOT NULL DEFAULT 0,
-  response_rate           DECIMAL(5,2)  NOT NULL DEFAULT 0.00,
-  avg_response_minutes    DECIMAL(8,2)  NULL,
-  median_response_minutes DECIMAL(8,2)  NULL,
-  created_at              DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at              DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  INDEX idx_stat_date (stat_date)
-) ENGINE=InnoDB;
-
--- ─── TELEGRAM RESPONSE DETAILS ───────────────────────────────────
--- Written by: amocrm_telegram_response.py (adapted)
 CREATE TABLE IF NOT EXISTS telegram_response_details (
-  id                    INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-  stat_date             DATE          NOT NULL,
-  conversation_id       BIGINT        NOT NULL,
-  contact_name          VARCHAR(255)  NULL,
-  first_client_msg_at   DATETIME      NULL,
-  first_manager_msg_at  DATETIME      NULL,
-  response_minutes      DECIMAL(8,2)  NULL,
-  is_answered           TINYINT(1)    NOT NULL DEFAULT 0,
-  created_at            DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at            DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_date_conv (stat_date, conversation_id),
-  INDEX idx_stat_date (stat_date),
-  INDEX idx_is_answered (is_answered)
-) ENGINE=InnoDB;
+  id                 BIGSERIAL PRIMARY KEY,
+  report_date        DATE NOT NULL,
+  contact_id         BIGINT,
+  lead_id            BIGINT,
+  talk_id            BIGINT,
+  client_time        TIMESTAMPTZ,
+  manager_reply_time TIMESTAMPTZ,
+  response_minutes   NUMERIC,
+  status             TEXT NOT NULL CHECK (status IN ('ANSWERED','WAITING'))
+);
+CREATE INDEX IF NOT EXISTS idx_tg_details_date ON telegram_response_details(report_date);
 
--- ─── KPI RESULTS ─────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS production_stats (
+  stat_date       DATE NOT NULL,
+  workshop        TEXT NOT NULL,
+  cards_in        INT NOT NULL DEFAULT 0,
+  cards_done      INT NOT NULL DEFAULT 0,
+  qty_in          BIGINT NOT NULL DEFAULT 0,
+  qty_done        BIGINT NOT NULL DEFAULT 0,
+  efficiency_pct  NUMERIC NOT NULL DEFAULT 0,
+  avg_cycle_days  NUMERIC,
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (stat_date, workshop)
+);
+
+CREATE TABLE IF NOT EXISTS production_chain (
+  stat_period           TEXT PRIMARY KEY,   -- e.g. '2026-05-10..2026-05-17'
+  sklad_zakaz           INT NOT NULL DEFAULT 0,
+  sklad_kirim           INT NOT NULL DEFAULT 0,
+  sklad_kirim_done      INT NOT NULL DEFAULT 0,
+  sklad_chiqim          INT NOT NULL DEFAULT 0,
+  sklad_chiqim_approved INT NOT NULL DEFAULT 0,
+  updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS qc_defects (
+  stat_date  DATE NOT NULL,
+  sku        TEXT NOT NULL,
+  reason     TEXT NOT NULL,
+  category   TEXT,
+  qty        INT NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_qc_defects ON qc_defects (stat_date, sku, reason, COALESCE(category,''));
+
+CREATE TABLE IF NOT EXISTS qc_stats (
+  stat_date     DATE PRIMARY KEY,
+  total_defects INT NOT NULL DEFAULT 0,
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS kpi_results (
-  id                   INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  period_type          ENUM('daily','monthly') NOT NULL,
-  period_date          DATE         NOT NULL,
-  department_id        INT UNSIGNED NULL,
-  manager_id           INT UNSIGNED NULL,
-  total_calls          INT UNSIGNED NULL,
-  missed_calls         INT UNSIGNED NULL,
-  missed_pct           DECIMAL(5,2) NULL,
-  efficiency_pct       DECIMAL(5,2) NULL,
-  avg_cycle_days       DECIMAL(4,1) NULL,
-  avg_response_min     DECIMAL(8,2) NULL,
-  telegram_resolution  DECIMAL(5,2) NULL,
-  trend_score          DECIMAL(5,2) NULL,
-  created_at           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  INDEX idx_period      (period_type, period_date),
-  INDEX idx_dept        (department_id),
-  INDEX idx_manager     (manager_id),
-  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
-  FOREIGN KEY (manager_id)    REFERENCES users(id)       ON DELETE SET NULL
-) ENGINE=InnoDB;
-
--- ─── DAILY REPORTS ───────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS daily_reports (
-  id            INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  report_date   DATE         NOT NULL UNIQUE,
-  total_calls   INT UNSIGNED NULL,
-  missed_calls  INT UNSIGNED NULL,
-  tg_messages   INT UNSIGNED NULL,
-  prod_orders   INT UNSIGNED NULL,
-  prod_done     INT UNSIGNED NULL,
-  notes         TEXT         NULL,
-  created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  INDEX idx_report_date (report_date)
-) ENGINE=InnoDB;
-
--- ─── MONTHLY REPORTS ─────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS monthly_reports (
-  id              INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  report_month    DATE         NOT NULL UNIQUE COMMENT 'First day of month',
-  total_calls     INT UNSIGNED NULL,
-  missed_calls    INT UNSIGNED NULL,
-  tg_messages     INT UNSIGNED NULL,
-  prod_orders     INT UNSIGNED NULL,
-  prod_done       INT UNSIGNED NULL,
-  efficiency_pct  DECIMAL(5,2) NULL,
-  notes           TEXT         NULL,
-  created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  INDEX idx_report_month (report_month)
-) ENGINE=InnoDB;
-
--- ─── NOTIFICATIONS ────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS notifications (
-  id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  user_id    INT UNSIGNED NULL,
-  type       VARCHAR(50)  NOT NULL,
-  title      VARCHAR(255) NOT NULL,
-  body       TEXT         NULL,
-  is_read    TINYINT(1)   NOT NULL DEFAULT 0,
-  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  INDEX idx_user_id    (user_id),
-  INDEX idx_is_read    (is_read),
-  INDEX idx_created_at (created_at),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+  period_type TEXT NOT NULL CHECK (period_type IN ('daily','monthly')),
+  period_date DATE NOT NULL,
+  department  TEXT NOT NULL DEFAULT '',
+  metric      TEXT NOT NULL,
+  value       NUMERIC,
+  status      TEXT,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (period_type, period_date, department, metric)
+);
