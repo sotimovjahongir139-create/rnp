@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { requireAuth } from '../middleware/auth.middleware.js';
+import { getKpi, getDepartments, getWeekly, getCycle, getTendency, getSku } from '../controllers/production.controller.js';
+const router = Router();
+router.use(requireAuth);
+router.get('/kpi', getKpi);
+router.get('/departments', getDepartments);
+router.get('/weekly', getWeekly);
+router.get('/cycle', getCycle);
+router.get('/tendency', getTendency);
+router.get('/sku', getSku);
+export default router;

@@ -7,6 +7,8 @@ import authRoutes from './routes/auth.routes.js';
 import qcRoutes from './routes/qc.routes.js';
 import crmRoutes from './routes/crm.routes.js';
 import kpiRoutes from './routes/kpi.routes.js';
+import ingestRoutes from './routes/ingest.routes.js';
+import productionRoutes from './routes/production.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 
 const env = loadEnv();
@@ -21,8 +23,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/qc', qcRoutes);
 app.use('/api/crm', crmRoutes);
 app.use('/api/kpi', kpiRoutes);
-// route mounts added in later tasks:
-// /production /crm /qc /kpi
+app.use('/api/ingest', ingestRoutes);
+app.use('/api/production', productionRoutes);
 
 app.use(errorHandler);
 
