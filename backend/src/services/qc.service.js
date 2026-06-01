@@ -1,18 +1,17 @@
 import { query } from '../config/db.js';
 
-const monthBounds = () => {
-  const now = new Date();
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10);
-  return start;
-};
+// "Current period" KPIs use a rolling 30-day window (not the calendar month):
+// on the 1st of a month the calendar-month figure is ~0 (data lands later), which
+// reads as a broken dashboard. 30 days mirrors the production department window and
+// always reflects recent activity. All date math is done in SQL (DB-local CURRENT_DATE)
+// to avoid JS Date timezone drift.
+const WINDOW_DAYS = 30;
 
 export async function kpi() {
-  const monthStart = monthBounds();
-  const today = new Date().toISOString().slice(0, 10);
-  const [todayRow] = await query('SELECT COALESCE(SUM(qty),0) AS n FROM qc_defects WHERE stat_date = $1', [today]);
-  const [monthRow] = await query('SELECT COALESCE(SUM(qty),0) AS n FROM qc_defects WHERE stat_date >= $1', [monthStart]);
-  const [topModel] = await query('SELECT sku, SUM(qty) AS v FROM qc_defects WHERE stat_date >= $1 GROUP BY sku ORDER BY v DESC LIMIT 1', [monthStart]);
-  const [topReason] = await query('SELECT reason, SUM(qty) AS v FROM qc_defects WHERE stat_date >= $1 GROUP BY reason ORDER BY v DESC LIMIT 1', [monthStart]);
+  const [todayRow]  = await query('SELECT COALESCE(SUM(qty),0) AS n FROM qc_defects WHERE stat_date = CURRENT_DATE');
+  const [monthRow]  = await query(`SELECT COALESCE(SUM(qty),0) AS n FROM qc_defects WHERE stat_date >= CURRENT_DATE - ${WINDOW_DAYS}`);
+  const [topModel]  = await query(`SELECT sku, SUM(qty) AS v FROM qc_defects WHERE stat_date >= CURRENT_DATE - ${WINDOW_DAYS} GROUP BY sku ORDER BY v DESC LIMIT 1`);
+  const [topReason] = await query(`SELECT reason, SUM(qty) AS v FROM qc_defects WHERE stat_date >= CURRENT_DATE - ${WINDOW_DAYS} GROUP BY reason ORDER BY v DESC LIMIT 1`);
   return {
     bugunNuqson: Number(todayRow.n),
     oyNuqson: Number(monthRow.n),
@@ -24,34 +23,35 @@ export async function kpi() {
 }
 
 export async function topModels() {
-  const monthStart = monthBounds();
-  return query('SELECT sku AS lbl, SUM(qty)::int AS v FROM qc_defects WHERE stat_date >= $1 GROUP BY sku ORDER BY v DESC LIMIT 5', [monthStart]);
+  return query(`SELECT sku AS lbl, SUM(qty)::int AS v FROM qc_defects WHERE stat_date >= CURRENT_DATE - ${WINDOW_DAYS} GROUP BY sku ORDER BY v DESC LIMIT 5`);
 }
 
 export async function sabablari() {
-  const monthStart = monthBounds();
-  return query('SELECT reason AS lbl, SUM(qty)::int AS v FROM qc_defects WHERE stat_date >= $1 GROUP BY reason ORDER BY v DESC', [monthStart]);
+  return query(`SELECT reason AS lbl, SUM(qty)::int AS v FROM qc_defects WHERE stat_date >= CURRENT_DATE - ${WINDOW_DAYS} GROUP BY reason ORDER BY v DESC`);
 }
 
 export async function top10() {
-  const monthStart = monthBounds();
-  const rows = await query('SELECT sku AS model, SUM(qty)::int AS v FROM qc_defects WHERE stat_date >= $1 GROUP BY sku ORDER BY v DESC LIMIT 10', [monthStart]);
+  const rows = await query(`SELECT sku AS model, SUM(qty)::int AS v FROM qc_defects WHERE stat_date >= CURRENT_DATE - ${WINDOW_DAYS} GROUP BY sku ORDER BY v DESC LIMIT 10`);
   return rows.map((r, i) => ({ rank: i + 1, model: r.model, v: r.v }));
 }
 
 const UZ_MONTHS = ['Yan','Fev','Mar','Apr','May','Iyn','Iyl','Avg','Sen','Okt','Noy','Dek'];
 
 export async function trend() {
+  // Month bucket keyed as 'YYYY-MM' text on the DB side — no JS Date parsing of DB values.
   const rows = await query(
-    `SELECT date_trunc('month', stat_date)::date AS m, SUM(qty)::int AS v
-     FROM qc_defects WHERE stat_date >= (date_trunc('month', now()) - interval '5 months')
-     GROUP BY 1 ORDER BY 1`, []);
-  const months = [], values = [];
+    `SELECT to_char(date_trunc('month', stat_date), 'YYYY-MM') AS mk, SUM(qty)::int AS v
+     FROM qc_defects WHERE stat_date >= date_trunc('month', CURRENT_DATE) - interval '5 months'
+     GROUP BY 1`);
   const now = new Date();
+  const baseIdx = now.getUTCFullYear() * 12 + now.getUTCMonth();
+  const months = [], values = [];
   for (let i = 5; i >= 0; i--) {
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
-    months.push(`${UZ_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`);
-    const hit = rows.find((r) => new Date(r.m).getUTCMonth() === d.getUTCMonth() && new Date(r.m).getUTCFullYear() === d.getUTCFullYear());
+    const idx = baseIdx - i;
+    const y = Math.floor(idx / 12), m = idx % 12;
+    const mk = `${y}-${String(m + 1).padStart(2, '0')}`;
+    months.push(`${UZ_MONTHS[m]} ${y}`);
+    const hit = rows.find((r) => r.mk === mk);
     values.push(hit ? hit.v : 0);
   }
   const badges = [];
