@@ -6,6 +6,7 @@ import healthRoutes from './routes/health.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import qcRoutes from './routes/qc.routes.js';
 import crmRoutes from './routes/crm.routes.js';
+import kpiRoutes from './routes/kpi.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 
 const env = loadEnv();
@@ -19,6 +20,7 @@ app.use('/', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/qc', qcRoutes);
 app.use('/api/crm', crmRoutes);
+app.use('/api/kpi', kpiRoutes);
 // route mounts added in later tasks:
 // /production /crm /qc /kpi
 

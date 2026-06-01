@@ -1,0 +1,2 @@
+# RNP Analytics — daily ETL at 06:00 Asia/Tashkent
+0 6 * * * cd /home/admin/rnp && . .venv/bin/activate && set -a && . ./.env && set +a && python -m etl.run_all >> etl/logs/run_$(date +\%F).log 2>&1
