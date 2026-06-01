@@ -2,9 +2,13 @@ import { useEffect, useRef } from 'react';
 import KPICard        from '../../components/cards/KPICard.jsx';
 import CategoryChart  from '../../components/charts/CategoryChart.jsx';
 import { svgEl, raf2 } from '../../utils/svgHelpers.js';
-import {
-  QC_KPI, QC_TREND, QC_TOP_MODELS, QC_SABABLARI, QC_TOP10,
-} from '../../data/mockData.js';
+import { useDashboard } from '../../context/DashboardContext.jsx';
+import { usePolling } from '../../hooks/usePolling.js';
+
+// ── Client-side color palettes (API returns no colors) ────────
+const DONUT_COLS = ['#3B6FD4', '#34C377', '#E05050', '#C48000', '#7B5EA7'];
+const CAT_COLS   = ['#3B6FD4', '#E05050', '#34C377', '#C48000', '#7B5EA7', '#287D4F', '#B5741A', '#C48000', '#8CA496'];
+const withColor = (arr = [], pal) => arr.map((d, i) => ({ ...d, c: d.c || pal[i % pal.length] }));
 
 // ── Brak trend line (absolute counts, red palette) ────────────
 function BrakTrendChart({ months, values }) {
@@ -155,6 +159,18 @@ function RankedList({ items }) {
 
 // ── Page ──────────────────────────────────────────────────────
 export default function QCPage() {
+  const { qc, refreshQC } = useDashboard();
+  useEffect(() => { refreshQC(); }, []);
+  usePolling(() => { refreshQC(); });
+
+  if (!qc?.kpi) return <div style={{ padding: 40, color: 'var(--t3)' }}>Yuklanmoqda...</div>;
+
+  const kpi = qc.kpi;
+  const trend = qc.trend || { months: [], values: [], badges: [] };
+  const topModels = withColor(qc.topModels, DONUT_COLS);
+  const sabablari = withColor(qc.sabablari, CAT_COLS);
+  const top10 = qc.top10 || [];
+
   return (
     <>
       <div className="sec-head">
@@ -164,25 +180,25 @@ export default function QCPage() {
       <div className="kpi-grid">
         <KPICard
           label="Bugungi nuqsonlar"
-          value={QC_KPI.bugunNuqson}
+          value={kpi.bugunNuqson}
           sub="jami nuqsonli birliklar"
           variant="red"
         />
         <KPICard
           label="Shu oyda"
-          value={QC_KPI.oyNuqson}
+          value={kpi.oyNuqson}
           sub="oylik nuqson soni"
           variant="gold"
         />
         <KPICard
           label="Eng muammoli model"
-          value={<span className="kpi-text-val warn">{QC_KPI.topModel}</span>}
-          sub={`${QC_KPI.topModelCount} nuqson — shu oydagi eng ko'p`}
+          value={<span className="kpi-text-val warn">{kpi.topModel}</span>}
+          sub={`${kpi.topModelCount} nuqson — shu oydagi eng ko'p`}
         />
         <KPICard
           label="Asosiy nuqson turi"
-          value={<span className="kpi-text-val warn">{QC_KPI.topSabab}</span>}
-          sub={`${QC_KPI.topSababCount} ta — eng ko'p uchraydigan sabab`}
+          value={<span className="kpi-text-val warn">{kpi.topSabab}</span>}
+          sub={`${kpi.topSababCount} ta — eng ko'p uchraydigan sabab`}
           variant="red"
         />
       </div>
@@ -191,9 +207,9 @@ export default function QCPage() {
         <div className="chart-card">
           <div className="chart-title">Brak dinamikasi</div>
           <div className="chart-sub">So'nggi 6 oy</div>
-          <BrakTrendChart months={QC_TREND.months} values={QC_TREND.values} />
+          <BrakTrendChart months={trend.months} values={trend.values} />
           <div className="trend-badge-row">
-            {QC_TREND.badges.map((b) => (
+            {trend.badges.map((b) => (
               <div
                 key={b.from}
                 className={`trend-badge${b.type === 'amber' ? ' am-badge' : b.type === 'green' ? ' gr-badge' : ''}`}
@@ -208,7 +224,7 @@ export default function QCPage() {
         <div className="chart-card">
           <div className="chart-title">Top 5 model</div>
           <div className="chart-sub">Taqsimot</div>
-          <DonutChart data={QC_TOP_MODELS} />
+          <DonutChart data={topModels} />
         </div>
       </div>
 
@@ -216,13 +232,13 @@ export default function QCPage() {
         <div className="chart-card">
           <div className="chart-title">Nuqson sabablari</div>
           <div className="chart-sub">Chastotasi bo'yicha</div>
-          <CategoryChart data={QC_SABABLARI} />
+          <CategoryChart data={sabablari} />
         </div>
 
         <div className="chart-card">
           <div className="chart-title">Top 10 model reytingi</div>
           <div className="chart-sub">Jami nuqsonlar</div>
-          <RankedList items={QC_TOP10} />
+          <RankedList items={top10} />
         </div>
       </div>
     </>

@@ -10,6 +10,7 @@ export function DashboardProvider({ children }) {
   const [crm, setCrm]               = useState(null);
   const [telegram, setTelegram]     = useState(null);
   const [scripts, setScripts]       = useState(null);
+  const [qc, setQc]                 = useState(null);
   const [loading, setLoading]       = useState({});
   const [error, setError]           = useState({});
 
@@ -54,6 +55,15 @@ export function DashboardProvider({ children }) {
     load('scripts', api.fetchScripts, setScripts),
   [load]);
 
+  const refreshQC = useCallback(() =>
+    Promise.all([
+      load('qcKpi',       api.fetchQCKpi,       (d) => setQc((p) => ({ ...p, kpi: d }))),
+      load('qcTrend',     api.fetchQCTrend,      (d) => setQc((p) => ({ ...p, trend: d }))),
+      load('qcTopModels', api.fetchQCTopModels,  (d) => setQc((p) => ({ ...p, topModels: d }))),
+      load('qcSabablari', api.fetchQCSabablari,  (d) => setQc((p) => ({ ...p, sabablari: d }))),
+      load('qcTop10',     api.fetchQCTop10,      (d) => setQc((p) => ({ ...p, top10: d }))),
+    ]), [load]);
+
   // Trigger all scripts on login (provider mounts once after auth)
   useEffect(() => {
     api.triggerAllScripts().catch(() => {});
@@ -62,9 +72,9 @@ export function DashboardProvider({ children }) {
   return (
     <DashboardContext.Provider value={{
       activeSection, setActiveSection,
-      production, crm, telegram, scripts,
+      production, crm, telegram, scripts, qc,
       loading, error,
-      refreshProduction, refreshCRM, refreshTelegram, refreshScripts,
+      refreshProduction, refreshCRM, refreshTelegram, refreshScripts, refreshQC,
     }}>
       {children}
     </DashboardContext.Provider>

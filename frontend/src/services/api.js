@@ -2,6 +2,7 @@ import {
   DEPT, PRODUCTION_KPI, WEEKLY, CYCLE, TENDENCY, SKU,
   CRM_OYLIK, CRM_KUNLIK, HOURLY, HOURLY_K,
   TELEGRAM_KPI, CATS,
+  QC_KPI, QC_TREND, QC_TOP_MODELS, QC_SABABLARI, QC_TOP10,
 } from '../data/mockData.js';
 
 const MOCK_SCRIPTS = [
@@ -106,6 +107,13 @@ export async function fetchCategories() {
   if (USE_MOCK) return CATS;
   return get('/api/crm/telegram/categories');
 }
+
+// ─── QC ───────────────────────────────────────────────────────
+export async function fetchQCKpi()         { if (USE_MOCK) return QC_KPI;        return get('/api/qc/kpi'); }
+export async function fetchQCTrend()        { if (USE_MOCK) return QC_TREND;      return get('/api/qc/trend'); }
+export async function fetchQCTopModels()    { if (USE_MOCK) return QC_TOP_MODELS; return get('/api/qc/top-models'); }
+export async function fetchQCSabablari()    { if (USE_MOCK) return QC_SABABLARI;  return get('/api/qc/sabablari'); }
+export async function fetchQCTop10()        { if (USE_MOCK) return QC_TOP10;      return get('/api/qc/top10'); }
 
 // ─── KPI ──────────────────────────────────────────────────────
 export async function fetchKPI() {
