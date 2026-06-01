@@ -1,21 +1,16 @@
 import jwt from 'jsonwebtoken';
-import { env } from '../config/env.js';
-import { AppError } from './error.middleware.js';
+import { loadEnv } from '../config/env.js';
+const env = loadEnv();
 
-export function authenticate(req, _res, next) {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) return next(new AppError('Unauthorized', 401));
-  try {
-    req.user = jwt.verify(header.slice(7), env.jwtSecret);
-    next();
-  } catch {
-    next(new AppError('Invalid token', 401));
-  }
+export function requireAuth(req, res, next) {
+  const h = req.headers.authorization || '';
+  const token = h.startsWith('Bearer ') ? h.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try { req.user = jwt.verify(token, env.jwtSecret); next(); }
+  catch { return res.status(401).json({ error: 'Invalid token' }); }
 }
 
-export function authorize(...roles) {
-  return (req, _res, next) => {
-    if (!roles.includes(req.user?.role)) return next(new AppError('Forbidden', 403));
-    next();
-  };
+export function requireAdmin(req, res, next) {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+  next();
 }
