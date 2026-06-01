@@ -2,6 +2,12 @@ import os
 import sys
 import time
 import requests
+from dotenv import load_dotenv
+
+# Load secrets from the repo-root/deploy-root .env so this module is self-sufficient
+# regardless of import order or whether the caller pre-sourced the env.
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+load_dotenv()
 
 DOMAIN = os.getenv("AMOCRM_DOMAIN")
 TOKEN = os.getenv("AMOCRM_TOKEN")
