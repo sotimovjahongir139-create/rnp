@@ -10,3 +10,10 @@ export const KPI_THRESHOLDS = {
 };
 
 export const DEPARTMENTS = ['Quyish PU', 'Sifat nazorati', 'Lazer', 'Chaxlash', 'Sklad', 'Quyish TEP'];
+
+// Normalize source `production_jarayon` names -> dashboard department labels.
+export const WORKSHOP_LABELS = {
+  'Sifat Nazorati': 'Sifat nazorati',
+  'Sklad (Kirim)':  'Sklad',
+};
+export const normalizeWorkshop = (name) => WORKSHOP_LABELS[name] || name;
