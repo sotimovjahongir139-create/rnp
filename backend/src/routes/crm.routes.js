@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { requireAuth } from '../middleware/auth.middleware.js';
+import { getMonthly, getDaily, getHourly, getHourlyToday, getTelegramKpi, getTelegramCats } from '../controllers/crm.controller.js';
+const router = Router();
+router.use(requireAuth);
+router.get('/monthly', getMonthly);
+router.get('/daily', getDaily);
+router.get('/hourly', getHourly);
+router.get('/hourly-today', getHourlyToday);
+router.get('/telegram/kpi', getTelegramKpi);
+router.get('/telegram/categories', getTelegramCats);
+export default router;
