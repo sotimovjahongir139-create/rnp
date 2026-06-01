@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analitika Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sb-w:220px;
+  --sb-bg:#182E25;
+  --sb-border:rgba(255,255,255,0.07);
+  --sb-text:#8FBDA4;
+  --sb-text-active:#FFFFFF;
+  --sb-active-bg:rgba(52,195,119,0.13);
+  --sb-active-bar:#34C377;
+  --main-bg:#EEE9DF;
+  --card-bg:#FFFFFF;
+  --cs:0 1px 3px rgba(0,0,0,0.06),0 4px 18px rgba(0,0,0,0.05);
+  --cs-h:0 4px 14px rgba(0,0,0,0.10),0 14px 36px rgba(0,0,0,0.08);
+  --green:#287D4F;
+  --green-l:#E5F4EC;
+  --green-b:#34C377;
+  --gold:#B5741A;
+  --gold-l:#FDF3E0;
+  --red:#C03434;
+  --red-l:#FDECEC;
+  --amber:#C48000;
+  --t1:#182822;
+  --t2:#475E54;
+  --t3:#8CA496;
+  --border:#DDD8CE;
+  --border-l:#E8E3DA;
+  --r8:8px;--r12:12px;--r16:16px;--r20:20px
+}
+html{font-size:15px}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--main-bg);color:var(--t1);min-height:100vh;overflow-x:hidden}
+.app{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:var(--sb-w);background:var(--sb-bg);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:100;border-right:1px solid var(--sb-border)}
+.sb-logo{padding:26px 20px 22px;border-bottom:1px solid var(--sb-border)}
+.logo-wrap{display:flex;align-items:center;gap:10px}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#34C377,#1E6B3E);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-icon svg{width:19px;height:19px}
+.logo-name{font-size:1.05rem;font-weight:800;color:#fff;letter-spacing:-0.01em}
+.logo-sub{font-size:0.6rem;color:var(--sb-text);letter-spacing:0.09em;text-transform:uppercase;margin-top:1px;opacity:0.7}
+.sb-nav{flex:1;padding:14px 10px;overflow-y:auto}
+.sb-sec-label{font-size:0.58rem;font-weight:700;color:var(--sb-text);opacity:0.45;text-transform:uppercase;letter-spacing:0.1em;padding:10px 10px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;transition:background 0.18s;margin-bottom:1px;position:relative;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,0.05)}
+.nav-item.active{background:var(--sb-active-bg)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:7px;bottom:7px;width:3px;background:var(--sb-active-bar);border-radius:0 2px 2px 0}
+.nav-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.nav-dot.g{background:#34C377;box-shadow:0 0 7px rgba(52,195,119,0.55)}
+.nav-dot.gr{background:#3A5548}
+.nav-label{font-size:0.81rem;font-weight:500;color:var(--sb-text);transition:color 0.18s;flex:1}
+.nav-item.active .nav-label{color:var(--sb-text-active);font-weight:600}
+
+
+/* MAIN */
+.main{margin-left:var(--sb-w);flex:1;min-height:100vh}
+.main::-webkit-scrollbar{width:5px}
+.main::-webkit-scrollbar-track{background:transparent}
+.main::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* SECTIONS */
+.section{display:none;padding:30px 34px;min-height:100vh;animation:fadeUp 0.28s ease}
+.section.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* HEADER */
+.sec-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:26px}
+.sec-title{font-size:1.38rem;font-weight:800;color:var(--t1);letter-spacing:-0.015em}
+.sec-badge{display:inline-flex;align-items:center;gap:5px;background:var(--card-bg);border:1px solid var(--border);border-radius:20px;padding:5px 13px;font-size:0.75rem;font-weight:600;color:var(--t2)}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.kpi-grid-7{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:22px}
+.kpi-grid-6{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:22px}
+.kpi-card{background:var(--card-bg);border-radius:var(--r16);padding:18px 20px;box-shadow:var(--cs);border:1px solid var(--border-l);transition:box-shadow 0.2s,transform 0.2s;position:relative;overflow:hidden}
+.kpi-card:hover{box-shadow:var(--cs-h);transform:translateY(-2px)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--green),var(--green-b));border-radius:var(--r16) var(--r16) 0 0}
+.kpi-card.gold::before{background:linear-gradient(90deg,var(--gold),#DFA040)}
+.kpi-card.red::before{background:linear-gradient(90deg,var(--red),#E05050)}
+.kpi-lbl{font-size:0.67rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px}
+.kpi-val{font-size:1.8rem;font-weight:800;color:var(--t1);letter-spacing:-0.025em;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:5px}
+.kpi-sub{font-size:0.69rem;color:var(--t2);font-weight:500}
+.kpi-grid-7 .kpi-val,.kpi-grid-6 .kpi-val{font-size:1.45rem}
+.kpi-grid-7 .kpi-lbl{font-size:0.61rem}
+
+/* DEPT GRID */
+.dept-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.dept-card{background:var(--card-bg);border-radius:var(--r16);padding:18px;box-shadow:var(--cs);border:1px solid var(--border-l);transition:box-shadow 0.2s,transform 0.2s}
+.dept-card:hover{box-shadow:var(--cs-h);transform:translateY(-2px)}
+.dept-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.dept-name{font-size:0.88rem;font-weight:700;color:var(--t1)}
+.badge{font-size:0.62rem;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:0.03em}
+.badge.normal{background:var(--green-l);color:var(--green)}
+.badge.kritik{background:var(--red-l);color:var(--red)}
+.dept-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.dept-stat{text-align:center;padding:7px 4px;background:var(--main-bg);border-radius:var(--r8)}
+.dstat-val{font-size:0.88rem;font-weight:700;color:var(--t1);font-variant-numeric:tabular-nums;display:block}
+.dstat-lbl{font-size:0.58rem;color:var(--t3);font-weight:600;margin-top:2px;display:block}
+.prog-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.prog-track{flex:1;height:5px;background:var(--main-bg);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;width:0;transition:width 1s cubic-bezier(0.4,0,0.2,1)}
+.prog-fill.n{background:linear-gradient(90deg,var(--green),var(--green-b))}
+.prog-fill.k{background:linear-gradient(90deg,var(--red),#E25050)}
+.prog-pct{font-size:0.7rem;font-weight:700;color:var(--t2);min-width:38px;text-align:right}
+.squares{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:9px}
+.sq{width:11px;height:11px;border-radius:2px;background:var(--border)}
+.sq.on{background:var(--green)}
+.sq.on.kr{background:var(--red)}
+.dept-foot{font-size:0.66rem;color:var(--t3);font-weight:600}
+
+/* CHARTS */
+.charts-row{display:grid;grid-template-columns:60fr 40fr;gap:14px;margin-bottom:24px}
+.chart-card{background:var(--card-bg);border-radius:var(--r16);padding:20px 22px;box-shadow:var(--cs);border:1px solid var(--border-l)}
+.chart-title{font-size:0.84rem;font-weight:700;color:var(--t1);margin-bottom:3px}
+.chart-sub{font-size:0.69rem;color:var(--t3);margin-bottom:16px}
+.legend{display:flex;gap:14px;margin-bottom:14px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:0.69rem;color:var(--t2);font-weight:500}
+.leg-dot{width:10px;height:10px;border-radius:3px}
+
+/* TABLE */
+.tbl-card{background:var(--card-bg);border-radius:var(--r16);padding:20px 22px;box-shadow:var(--cs);border:1px solid var(--border-l);margin-bottom:24px}
+.tbl-head-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;font-size:0.64rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.07em;padding:0 10px 9px;border-bottom:1px solid var(--border)}
+tbody tr{border-bottom:1px solid var(--border-l);transition:background 0.14s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--main-bg)}
+tbody td{padding:10px 10px;font-size:0.78rem;color:var(--t1);font-weight:500}
+.td-name{font-weight:700}
+.eff-cell{display:flex;align-items:center;gap:6px}
+.eff-track{width:55px;height:4px;background:var(--main-bg);border-radius:2px;overflow:hidden;flex-shrink:0}
+.eff-fill{height:100%;border-radius:2px}
+.tbl-badge{display:inline-flex;align-items:center;font-size:0.67rem;font-weight:700;padding:3px 8px;border-radius:12px}
+.tbl-badge.ok{background:var(--green-l);color:var(--green)}
+.tbl-badge.kr{background:var(--red-l);color:var(--red)}
+.tbl-badge.na{background:#F0F0F0;color:#888}
+
+/* SECTION 2 */
+.tabs-bar{display:flex;gap:3px;background:var(--card-bg);border-radius:11px;padding:4px;width:fit-content;margin-bottom:22px;box-shadow:var(--cs);border:1px solid var(--border-l)}
+.tab-btn{padding:7px 22px;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.79rem;font-weight:600;color:var(--t2);background:transparent;transition:all 0.2s}
+.tab-btn.active{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(40,125,79,0.3)}
+.tab-pane{display:none}
+.tab-pane.active{display:block;animation:fadeUp 0.22s ease}
+.two-panel{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.panel-card{background:var(--card-bg);border-radius:var(--r16);padding:20px 22px;box-shadow:var(--cs);border:1px solid var(--border-l)}
+.missed-stats{display:flex;justify-content:space-between;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border-l)}
+.mstat{text-align:center}
+.mstat-val{font-size:1.55rem;font-weight:800;color:var(--t1);display:block;letter-spacing:-0.02em}
+.mstat-lbl{font-size:0.64rem;color:var(--t3);font-weight:600}
+.hbar-row{margin-bottom:11px}
+.hbar-lbl{display:flex;justify-content:space-between;font-size:0.7rem;color:var(--t2);font-weight:600;margin-bottom:4px}
+.hbar-track{height:5px;background:var(--main-bg);border-radius:3px;overflow:hidden}
+.hbar-fill{height:100%;border-radius:3px;width:0;transition:width 1s cubic-bezier(0.4,0,0.2,1)}
+.hbar-fill.g{background:linear-gradient(90deg,var(--green),var(--green-b))}
+.hbar-fill.a{background:linear-gradient(90deg,#B06010,#D4882A)}
+.hbar-fill.r{background:linear-gradient(90deg,var(--red),#E05050)}
+
+/* PLACEHOLDER */
+.ph-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:68vh;gap:18px}
+.ph-icon{width:96px;height:96px;background:var(--card-bg);border-radius:26px;display:flex;align-items:center;justify-content:center;box-shadow:var(--cs);border:1px solid var(--border-l)}
+.ph-title{font-size:1.45rem;font-weight:800;color:var(--t1)}
+.ph-desc{font-size:0.86rem;color:var(--t3);font-weight:500}
+.ph-btn{background:var(--card-bg);border:1px solid var(--border);border-radius:20px;padding:9px 22px;font-size:0.78rem;font-weight:700;color:var(--t2);cursor:default;box-shadow:var(--cs)}
+.mono{font-family:'DM Mono',monospace}
+
+/* CHARTS-ROW 3-COL */
+.charts-row-3{display:grid;grid-template-columns:40fr 30fr 30fr;gap:14px;margin-bottom:24px}
+
+/* SECTION DIVIDER */
+.sec-divider{height:1px;background:var(--border);margin:30px 0}
+
+/* TELEGRAM BLOCK HEAD */
+.tg-block-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.tg-sub-title{font-size:1.05rem;font-weight:800;color:var(--t1);letter-spacing:-0.01em}
+.tg-sub-desc{font-size:0.72rem;color:var(--t3);margin-top:2px}
+
+/* MODEL PILLS */
+.mpill{font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:0.02em;white-space:nowrap}
+.mpill.ma{background:#DDEAFF;color:#2B55B8}
+.mpill.mb{background:#E0F5EC;color:#1C6B3A}
+.mpill.mc{background:#FFF0D6;color:#B86800}
+.mpill.md{background:#F0E6FF;color:#6833B5}
+.mpill.mall{background:#EEEBE4;color:#5A6B64}
+
+/* SKU TABLE */
+.sku-table{width:100%;border-collapse:collapse}
+.sku-table thead th{font-size:0.6rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.07em;padding:0 8px 8px;border-bottom:1px solid var(--border);text-align:left}
+.sku-table tbody tr{border-bottom:1px solid var(--border-l);transition:background 0.14s}
+.sku-table tbody tr:last-child{border-bottom:none}
+.sku-table tbody tr:hover td{background:var(--main-bg)}
+.sku-dept{font-size:0.75rem;font-weight:700;color:var(--t1);padding:7px 8px;white-space:nowrap;vertical-align:middle}
+.pills-cell{padding:6px 8px;vertical-align:middle}
+.pills-inner{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+
+/* TENDENCY CHART */
+.trend-pill-btn{background:var(--green-l);color:var(--green);border:1px solid rgba(40,125,79,0.2);border-radius:20px;padding:5px 14px;font-size:0.72rem;font-weight:700;cursor:default;font-family:inherit;flex-shrink:0}
+.trend-badge-row{display:flex;gap:10px;margin-top:14px}
+.trend-badge{display:flex;flex-direction:column;align-items:center;gap:3px;background:var(--main-bg);border-radius:var(--r8);padding:9px 0;flex:1;border:1px solid var(--border-l)}
+.trend-badge.am-badge{background:#FFF8E8;border-color:rgba(196,128,0,0.15)}
+.trend-badge.gr-badge{background:var(--green-l);border-color:rgba(40,125,79,0.15)}
+.trend-badge-lbl{font-size:0.63rem;color:var(--t3);font-weight:600}
+.trend-badge-val{font-size:0.92rem;font-weight:800;color:var(--t2)}
+.trend-badge.gr-badge .trend-badge-val{color:var(--green)}
+.trend-badge.am-badge .trend-badge-val{color:var(--gold)}
+.kpi-pending-note{display:block;font-size:0.59rem;color:var(--amber);font-weight:700;margin-top:3px;letter-spacing:0.01em}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="logo-wrap">
+      <div class="logo-icon">
+        <svg viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="11" width="4" height="6" rx="1.5" fill="white" opacity="0.6"/>
+          <rect x="7.5" y="7" width="4" height="10" rx="1.5" fill="white" opacity="0.8"/>
+          <rect x="13" y="4" width="4" height="13" rx="1.5" fill="white"/>
+          <path d="M3.5 9.5L8 6l3.5 3L15.5 4" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name">Analitika</div>
+        <div class="logo-sub">Dashboard</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-sec-label">Bolimlar</div>
+    <div class="nav-item active" data-target="ishlab-chiqarish">
+      <span class="nav-dot g"></span>
+      <span class="nav-label">Ishlab chiqarish</span>
+    </div>
+    <div class="nav-item" data-target="klient-menejer">
+      <span class="nav-dot g"></span>
+      <span class="nav-label">Klient-menejer</span>
+    </div>
+    <div class="nav-item" data-target="sifat-nazorati">
+      <span class="nav-dot gr"></span>
+      <span class="nav-label">Sifat nazorati</span>
+    </div>
+    <div class="nav-item" data-target="sotuv">
+      <span class="nav-dot gr"></span>
+      <span class="nav-label">Sotuv</span>
+    </div>
+    <div class="nav-item" data-target="marketing">
+      <span class="nav-dot gr"></span>
+      <span class="nav-label">Marketing</span>
+    </div>
+  </nav>
+
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+
+<!-- ── SECTION 1: ISHLAB CHIQARISH ── -->
+<section id="ishlab-chiqarish" class="section active">
+  <div class="sec-head">
+    <div class="sec-title">Ishlab chiqarish — Bolimlar holati</div>
+  </div>
+
+  <div class="tabs-bar">
+    <button class="tab-btn active" data-ictab="ic-oylik">Oylik</button>
+    <button class="tab-btn" data-ictab="ic-kunlik">Kunlik</button>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Jami zakaz</div>
+      <div class="kpi-val" data-count="78886">0</div>
+      <div class="kpi-sub">6 bolim</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-lbl">Jami kartochkalar</div>
+      <div class="kpi-val" data-count="525">0</div>
+      <div class="kpi-sub">faol kartochka</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-lbl">Bajarildi</div>
+      <div class="kpi-val" data-count="73973">0</div>
+      <div class="kpi-sub">93.8% umumiy</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-lbl">Qoldi</div>
+      <div class="kpi-val" data-count="4913">0</div>
+      <div class="kpi-sub">6.2% qolmoqda</div>
+    </div>
+  </div>
+
+  <div class="dept-grid" id="dept-grid"></div>
+
+  <div class="charts-row-3">
+    <div class="chart-card">
+      <div class="chart-title">Kirdi va Bajarildi — bolimlar boyicha</div>
+      <div class="chart-sub">Haftalik kirish va bajarish holati</div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#34C377"></div>Kirdi</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#B5741A"></div>Bajarildi</div>
+      </div>
+      <svg id="grouped-chart" width="100%" viewBox="0 0 540 210" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Ortacha sikl vaqti (kun)</div>
+      <div class="chart-sub">Bolimlar boyicha ishlov vaqti</div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#287D4F"></div>&#8804;2 kun</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#C48000"></div>2–3 kun</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#C03434"></div>3+ kun</div>
+      </div>
+      <svg id="cycle-chart" width="100%" viewBox="0 0 330 210" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">SKU — Mahsulot modellari</div>
+      <div class="chart-sub">Bolimlar boyicha</div>
+      <table class="sku-table">
+        <thead>
+          <tr><th>Bo'lim</th><th>SKU / Model</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="sku-dept">Quyish PU</td>
+            <td class="pills-cell"><div class="pills-inner"><span class="mpill ma">Model A</span><span class="mpill mb">Model B</span><span class="mpill mc">Model C</span></div></td>
+          </tr>
+          <tr>
+            <td class="sku-dept">Sifat nazorati</td>
+            <td class="pills-cell"><div class="pills-inner"><span class="mpill ma">Model A</span><span class="mpill mb">Model B</span><span class="mpill mc">Model C</span><span class="mpill md">Model D</span></div></td>
+          </tr>
+          <tr>
+            <td class="sku-dept">Lazer</td>
+            <td class="pills-cell"><div class="pills-inner"><span class="mpill mb">Model B</span><span class="mpill md">Model D</span></div></td>
+          </tr>
+          <tr>
+            <td class="sku-dept">Chaxlash</td>
+            <td class="pills-cell"><div class="pills-inner"><span class="mpill ma">Model A</span><span class="mpill mc">Model C</span></div></td>
+          </tr>
+          <tr>
+            <td class="sku-dept">Sklad</td>
+            <td class="pills-cell"><div class="pills-inner"><span class="mpill mall">Barchasi</span></div></td>
+          </tr>
+          <tr>
+            <td class="sku-dept">Quyish TEP</td>
+            <td class="pills-cell"><div class="pills-inner"><span class="mpill ma">Model A</span><span class="mpill mb">Model B</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head-row">
+      <div class="chart-title">Bolimlar boyicha haftalik holat</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Bolim</th>
+          <th>Kirdi</th>
+          <th>Bajarildi</th>
+          <th>Samaradorlik</th>
+          <th>Holat</th>
+          <th>Sikl vaqti</th>
+          <th>Min/Max kun</th>
+        </tr>
+      </thead>
+      <tbody id="weekly-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="tbl-card">
+    <div class="tbl-head-row">
+      <div>
+        <div class="chart-title">Ishlab chiqarish samaradorligi — Oylik tendensiya</div>
+        <div class="chart-sub" style="margin-bottom:0">So'nggi 6 oy boyicha dinamika</div>
+      </div>
+      <button class="trend-pill-btn">Tendensiya</button>
+    </div>
+    <svg id="tendency-chart" width="100%" viewBox="0 0 900 200" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+    <div class="trend-badge-row">
+      <div class="trend-badge">
+        <span class="trend-badge-lbl">Fev → Mar</span>
+        <span class="trend-badge-val">0%</span>
+      </div>
+      <div class="trend-badge am-badge">
+        <span class="trend-badge-lbl">Mar → Apr</span>
+        <span class="trend-badge-val">+2%</span>
+      </div>
+      <div class="trend-badge gr-badge">
+        <span class="trend-badge-lbl">Apr → May</span>
+        <span class="trend-badge-val">+100%</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SECTION 2: KLIENT-MENEJER ── -->
+<section id="klient-menejer" class="section">
+  <div class="sec-head">
+    <div class="sec-title">Klient-menejer — Aloqa tahlili</div>
+  </div>
+
+  <div class="tabs-bar">
+    <button class="tab-btn active" data-tab="oylik">Oylik</button>
+    <button class="tab-btn" data-tab="kunlik">Kunlik</button>
+  </div>
+
+  <!-- OYLIK -->
+  <div class="tab-pane active" id="tab-oylik">
+    <div class="kpi-grid-7">
+      <div class="kpi-card">
+        <div class="kpi-lbl">Jami</div>
+        <div class="kpi-val" data-count="598">0</div>
+        <div class="kpi-sub">qongiroqlar</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Kiruvchi</div>
+        <div class="kpi-val" data-count="359">0</div>
+        <div class="kpi-sub">qongiroq</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Chiquvchi</div>
+        <div class="kpi-val" data-count="193">0</div>
+        <div class="kpi-sub">qongiroq</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-lbl">Otkazib yuborilgan</div>
+        <div class="kpi-val" data-count="46">0</div>
+        <div class="kpi-sub">qongiroq</div>
+      </div>
+      <div class="kpi-card gold">
+        <div class="kpi-lbl">Qayta chiqilgan</div>
+        <div class="kpi-val" data-count="36">0</div>
+        <div class="kpi-sub">qongiroq</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Qayta chiqilmagan</div>
+        <div class="kpi-val" data-count="10">0</div>
+        <div class="kpi-sub">qongiroq</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-lbl">Otkazib yuborish %</div>
+        <div class="kpi-val">7.7%</div>
+        <div class="kpi-sub">otkazish darajasi</div>
+      </div>
+    </div>
+
+    <div class="two-panel">
+      <div class="panel-card">
+        <div class="chart-title" style="margin-bottom:14px">Otkazib yuborilgan natijalari</div>
+        <div class="missed-stats">
+          <div class="mstat">
+            <span class="mstat-val">36</span>
+            <span class="mstat-lbl">Qayta chiqilgan</span>
+          </div>
+          <div class="mstat">
+            <span class="mstat-val">10</span>
+            <span class="mstat-lbl">Qayta chiqilmagan</span>
+          </div>
+          <div class="mstat">
+            <span class="mstat-val">3,702.8</span>
+            <span class="mstat-lbl">Qayta aloqa (daq)</span>
+          </div>
+        </div>
+        <div class="hbar-row">
+          <div class="hbar-lbl"><span>Javob berish</span><span>92%</span></div>
+          <div class="hbar-track"><div class="hbar-fill g" data-w="92"></div></div>
+        </div>
+        <div class="hbar-row">
+          <div class="hbar-lbl"><span>Qayta chiqish</span><span>78%</span></div>
+          <div class="hbar-track"><div class="hbar-fill a" data-w="78"></div></div>
+        </div>
+        <div class="hbar-row">
+          <div class="hbar-lbl"><span>Qayta chiqilmagan</span><span>22%</span></div>
+          <div class="hbar-track"><div class="hbar-fill r" data-w="22"></div></div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="chart-title" style="margin-bottom:3px">Qongiroqlar soat boyicha</div>
+        <div class="chart-sub">Kunlik taqsimot</div>
+        <svg id="hourly-chart" width="100%" viewBox="0 0 300 195" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+
+    <!-- ── TELEGRAM BLOCK ── -->
+    <div class="sec-divider"></div>
+    <div>
+      <div class="tg-block-head">
+        <div>
+          <div class="tg-sub-title">Telegram — Xabarlar tahlili</div>
+          <div class="tg-sub-desc">Mijoz xabarlari va menejer javoblari</div>
+        </div>
+        <div class="tabs-bar" style="margin-bottom:0">
+          <button class="tab-btn active" data-ictab="tg-oylik">Oylik</button>
+          <button class="tab-btn" data-ictab="tg-kunlik">Kunlik</button>
+        </div>
+      </div>
+      <div class="kpi-grid-6">
+        <div class="kpi-card">
+          <div class="kpi-lbl">Jami xabarlar</div>
+          <div class="kpi-val" data-count="115">0</div>
+          <div class="kpi-sub">bugun</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-lbl">Mijoz xabarlari</div>
+          <div class="kpi-val" data-count="46">0</div>
+          <div class="kpi-sub">xabar</div>
+        </div>
+        <div class="kpi-card gold">
+          <div class="kpi-lbl">Menejer javoblari</div>
+          <div class="kpi-val" data-count="69">0</div>
+          <div class="kpi-sub">javob</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-lbl">Ortacha javob vaqti</div>
+          <div class="kpi-val">30.80</div>
+          <div class="kpi-sub">daqiqa</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-lbl">Javob darajasi</div>
+          <div class="kpi-val">100%</div>
+          <div class="kpi-sub">javob berilgan</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-lbl">Murojaat hal qilish</div>
+          <div class="kpi-val">93.94%</div>
+          <div class="kpi-sub">hal qilingan</div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Kategoriya boyicha</div>
+        <div class="chart-sub">Xabar va murojaatlar tahlili</div>
+        <svg id="tg-cat-chart" width="100%" viewBox="0 0 580 220" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- KUNLIK -->
+  <div class="tab-pane" id="tab-kunlik">
+    <div class="kpi-grid-7">
+      <div class="kpi-card">
+        <div class="kpi-lbl">Jami</div>
+        <div class="kpi-val" data-count="22">0</div>
+        <div class="kpi-sub">qongiroqlar</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Kiruvchi</div>
+        <div class="kpi-val" data-count="14">0</div>
+        <div class="kpi-sub">qongiroq</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Chiquvchi</div>
+        <div class="kpi-val" data-count="7">0</div>
+        <div class="kpi-sub">qongiroq</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-lbl">Otkazib yuborilgan</div>
+        <div class="kpi-val" data-count="1">0</div>
+        <div class="kpi-sub">qongiroq</div>
+      </div>
+      <div class="kpi-card gold">
+        <div class="kpi-lbl">Qayta chiqilgan</div>
+        <div class="kpi-val" data-count="1">0</div>
+        <div class="kpi-sub">qongiroq</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Qayta chiqilmagan</div>
+        <div class="kpi-val">0</div>
+        <div class="kpi-sub">qongiroq</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-lbl">Otkazib yuborish %</div>
+        <div class="kpi-val">4.5%</div>
+        <div class="kpi-sub">otkazish darajasi</div>
+      </div>
+    </div>
+
+    <div class="two-panel">
+      <div class="panel-card">
+        <div class="chart-title" style="margin-bottom:14px">Otkazib yuborilgan natijalari</div>
+        <div class="missed-stats">
+          <div class="mstat">
+            <span class="mstat-val">1</span>
+            <span class="mstat-lbl">Qayta chiqilgan</span>
+          </div>
+          <div class="mstat">
+            <span class="mstat-val">0</span>
+            <span class="mstat-lbl">Qayta chiqilmagan</span>
+          </div>
+          <div class="mstat">
+            <span class="mstat-val">48.3</span>
+            <span class="mstat-lbl">Qayta aloqa (daq)</span>
+          </div>
+        </div>
+        <div class="hbar-row">
+          <div class="hbar-lbl"><span>Javob berish</span><span>95%</span></div>
+          <div class="hbar-track"><div class="hbar-fill g" data-w="95"></div></div>
+        </div>
+        <div class="hbar-row">
+          <div class="hbar-lbl"><span>Qayta chiqish</span><span>100%</span></div>
+          <div class="hbar-track"><div class="hbar-fill a" data-w="100"></div></div>
+        </div>
+        <div class="hbar-row">
+          <div class="hbar-lbl"><span>Qayta chiqilmagan</span><span>0%</span></div>
+          <div class="hbar-track"><div class="hbar-fill r" data-w="0"></div></div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="chart-title" style="margin-bottom:3px">Qongiroqlar soat boyicha</div>
+        <div class="chart-sub">Kunlik taqsimot</div>
+        <svg id="hourly-chart-k" width="100%" viewBox="0 0 300 195" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ── SECTION 3: SIFAT NAZORATI ── -->
+<section id="sifat-nazorati" class="section">
+  <div class="sec-head">
+    <div class="sec-title">Sifat nazorati</div>
+    <div class="sec-badge">Aprel 2026</div>
+  </div>
+  <div class="ph-wrap">
+    <div class="ph-icon">
+      <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
+        <circle cx="22" cy="22" r="12" stroke="#287D4F" stroke-width="3"/>
+        <path d="M31 31l10 10" stroke="#287D4F" stroke-width="3" stroke-linecap="round"/>
+        <path d="M18 22h8M22 18v8" stroke="#34C377" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="ph-title">Sifat nazorati</div>
+    <div class="ph-desc">Malumotlar yigilmoqda</div>
+    <div class="ph-btn">Tez kunda</div>
+  </div>
+</section>
+
+<!-- ── SECTION 4: SOTUV ── -->
+<section id="sotuv" class="section">
+  <div class="sec-head">
+    <div class="sec-title">Sotuv</div>
+    <div class="sec-badge">Aprel 2026</div>
+  </div>
+  <div class="ph-wrap">
+    <div class="ph-icon">
+      <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
+        <rect x="7" y="30" width="8" height="13" rx="2" fill="#34C377" opacity="0.65"/>
+        <rect x="21" y="22" width="8" height="21" rx="2" fill="#34C377" opacity="0.85"/>
+        <rect x="35" y="15" width="8" height="28" rx="2" fill="#287D4F"/>
+        <path d="M9.5 28l12-9 8 5 11-13" stroke="#B5741A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="40.5" cy="11" r="3.5" fill="#B5741A"/>
+      </svg>
+    </div>
+    <div class="ph-title">Sotuv</div>
+    <div class="ph-desc">Malumotlar yigilmoqda</div>
+    <div class="ph-btn">Tez kunda</div>
+  </div>
+</section>
+
+<!-- ── SECTION 5: MARKETING ── -->
+<section id="marketing" class="section">
+  <div class="sec-head">
+    <div class="sec-title">Marketing</div>
+    <div class="sec-badge">Aprel 2026</div>
+  </div>
+  <div class="ph-wrap">
+    <div class="ph-icon">
+      <svg width="50" height="50" viewBox="0 0 50 50" fill="none">
+        <path d="M10 20v10l7 2 20 10V8L17 20H10z" fill="#34C377" opacity="0.75"/>
+        <path d="M17 20v10" stroke="#287D4F" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M37 17c4 2 6 5 6 9s-2 7-6 9" stroke="#B5741A" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M41 12c6 3 9 7.5 9 12s-3 9-9 12" stroke="#B5741A" stroke-width="2" stroke-linecap="round" opacity="0.45"/>
+      </svg>
+    </div>
+    <div class="ph-title">Marketing</div>
+    <div class="ph-desc">Malumotlar yigilmoqda</div>
+    <div class="ph-btn">Tez kunda</div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+/* ─── DATA ─────────────────────────────────────────────── */
+const DEPT = [
+  {name:'Quyish PU',     st:'Normal',jami:19560,baj:19099,qol:461, pct:97.64,cards:142},
+  {name:'Sifat nazorati',st:'Normal',jami:24652,baj:23961,qol:691, pct:97.2, cards:162},
+  {name:'Lazer',         st:'Kritik',jami:5680, baj:3350, qol:2330,pct:58.98,cards:32 },
+  {name:'Chaxlash',      st:'Kritik',jami:2150, baj:1395, qol:755, pct:64.88,cards:23 },
+  {name:'Sklad',         st:'Normal',jami:21502,baj:20926,qol:576, pct:97.32,cards:140},
+  {name:'Quyish TEP',   st:'Normal',jami:5342, baj:5242, qol:100, pct:98.13,cards:26 },
+];
+
+const WEEKLY = [
+  {name:'Quyish PU',      k:12,b:18,eff:150,holat:'Yaxshi',      sikl:'2.3 kun',mm:'0/16'},
+  {name:'Sifat nazorati', k:22,b:20,eff:91, holat:'Yaxshi',      sikl:'1.7 kun',mm:'0/13'},
+  {name:'Lazer',          k:5, b:0, eff:0,  holat:'Kritik',      sikl:'—',      mm:'—'   },
+  {name:'Chaxlash',       k:0, b:0, eff:0,  holat:'Malumot yoq', sikl:'—',      mm:'—'   },
+  {name:'Sklad',          k:20,b:8, eff:40, holat:'Kritik',      sikl:'3.4 kun',mm:'2/6' },
+  {name:'Quyish TEP',    k:11,b:7, eff:98, holat:'Yaxshi',      sikl:'2.9 kun',mm:'0/8' },
+];
+
+const CYCLE = [
+  {name:'Quyish PU',     v:2.3},
+  {name:'Sifat n.',      v:1.7},
+  {name:'Lazer',         v:0  },
+  {name:'Chaxlash',      v:0  },
+  {name:'Sklad',         v:3.4},
+  {name:'Quyish TEP',   v:2.9},
+];
+
+const HOURLY = [
+  {lbl:'09–11',v:95 },
+  {lbl:'11–13',v:126},
+  {lbl:'13–15',v:115},
+  {lbl:'15–17',v:130},
+  {lbl:'17–19',v:104},
+  {lbl:'19–21',v:65 },
+  {lbl:'21–23',v:22 },
+];
+
+const HOURLY_K = [
+  {lbl:'09–11',v:3},{lbl:'11–13',v:5},{lbl:'13–15',v:4},
+  {lbl:'15–17',v:6},{lbl:'17–19',v:2},{lbl:'19–21',v:1},{lbl:'21–23',v:1},
+];
+
+const CATS = [
+  {lbl:'Menejer javoblari',  v:69,c:'#3B6FD4'},
+  {lbl:'Mijoz xabarlari',    v:46,c:'#34C377'},
+  {lbl:'Mijoz murojaatlari', v:33,c:'#7B5EA7'},
+  {lbl:'Javob berilgan',     v:31,c:'#287D4F'},
+  {lbl:'Javob kutilayotgan', v:2, c:'#C03434', pct:'1.74%'},
+];
+
+/* ─── HELPERS ────────────────────────────────────────── */
+function fmt(n){return Math.round(n).toLocaleString('en-US')}
+
+function cycleColor(v){
+  if(v===0) return '#B4C8BE';
+  if(v<=2)  return '#287D4F';
+  if(v<=3)  return '#C48000';
+  return '#C03434';
+}
+
+function svgEl(tag,attrs,inner){
+  const ns='http://www.w3.org/2000/svg';
+  const el=document.createElementNS(ns,tag);
+  for(const[k,v] of Object.entries(attrs||{})) el.setAttribute(k,v);
+  if(inner) el.innerHTML=inner;
+  return el;
+}
+
+function raf2(fn){requestAnimationFrame(()=>requestAnimationFrame(fn))}
+
+/* ─── ANIMATION ─────────────────────────────────────── */
+function rafAnim(from,to,dur,delay,cb){
+  const t0=performance.now()+delay;
+  function tick(now){
+    if(now<t0){requestAnimationFrame(tick);return}
+    const p=Math.min((now-t0)/dur,1);
+    const e=1-Math.pow(1-p,3);
+    cb(from+(to-from)*e,p>=1);
+    if(p<1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function animateCounters(root){
+  root.querySelectorAll('[data-count]').forEach(el=>{
+    const target=parseInt(el.dataset.count);
+    rafAnim(0,target,1100,0,(v)=>{el.textContent=fmt(v)});
+  });
+}
+
+function animateProgs(root){
+  root.querySelectorAll('.prog-fill[data-w],.hbar-fill[data-w]').forEach(el=>{
+    const w=parseFloat(el.dataset.w||el.getAttribute('data-w'));
+    setTimeout(()=>{el.style.width=w+'%'},80);
+  });
+}
+
+/* ─── RENDER DEPT CARDS ─────────────────────────────── */
+function renderDeptCards(){
+  const grid=document.getElementById('dept-grid');
+  grid.innerHTML=DEPT.map(d=>{
+    const isK=d.st==='Kritik';
+    const filled=Math.floor(d.pct*20/100);
+    const sqs=Array.from({length:20},(_,i)=>`<div class="sq${i<filled?(isK?' on kr':' on'):''}"></div>`).join('');
+    return `<div class="dept-card">
+      <div class="dept-head">
+        <div class="dept-name">${d.name}</div>
+        <div class="badge ${isK?'kritik':'normal'}">${d.st}</div>
+      </div>
+      <div class="dept-stats">
+        <div class="dept-stat"><span class="dstat-val">${fmt(d.jami)}</span><span class="dstat-lbl">Jami zakaz</span></div>
+        <div class="dept-stat"><span class="dstat-val">${fmt(d.baj)}</span><span class="dstat-lbl">Bajarildi</span></div>
+        <div class="dept-stat"><span class="dstat-val">${fmt(d.qol)}</span><span class="dstat-lbl">Qoldi</span></div>
+      </div>
+      <div class="prog-row">
+        <div class="prog-track"><div class="prog-fill ${isK?'k':'n'}" data-w="${d.pct}"></div></div>
+        <div class="prog-pct">${d.pct}%</div>
+      </div>
+      <div class="squares">${sqs}</div>
+      <div class="dept-foot">${d.cards} kartochka</div>
+    </div>`;
+  }).join('');
+}
+
+/* ─── RENDER TABLE ───────────────────────────────────── */
+function renderTable(){
+  const tb=document.getElementById('weekly-tbody');
+  tb.innerHTML=WEEKLY.map(r=>{
+    let bc='na',bl=r.holat;
+    if(r.holat==='Yaxshi') bc='ok';
+    if(r.holat==='Kritik') bc='kr';
+    const effW=Math.min(r.eff,100);
+    const effC=r.holat==='Yaxshi'?'#287D4F':r.holat==='Kritik'?'#C03434':'#aaa';
+    return `<tr>
+      <td class="td-name">${r.name}</td>
+      <td class="mono">${r.k}</td>
+      <td class="mono">${r.b}</td>
+      <td><div class="eff-cell">
+        <div class="eff-track"><div class="eff-fill" style="width:${effW}%;background:${effC}"></div></div>
+        <span class="mono" style="font-size:0.72rem;color:var(--t2)">${r.eff}%</span>
+      </div></td>
+      <td><span class="tbl-badge ${bc}">${bl}</span></td>
+      <td class="mono" style="color:var(--t2);font-size:0.73rem">${r.sikl}</td>
+      <td class="mono" style="color:var(--t3);font-size:0.73rem">${r.mm==='—'?'':r.mm}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ─── GROUPED BAR CHART ─────────────────────────────── */
+function drawGrouped(){
+  const svg=document.getElementById('grouped-chart');
+  if(!svg) return;
+  svg.innerHTML='';
+  const W=540,H=210,pt=10,pr=20,pb=48,pl=38;
+  const cW=W-pl-pr,cH=H-pt-pb;
+  const maxV=Math.max(...WEEKLY.flatMap(d=>[d.k,d.b]),1);
+  const sy=v=>(v/maxV)*cH;
+  const gW=cW/WEEKLY.length;
+  const bW=gW*0.28;
+  const shortN=['Q.PU','Sifat n.','Lazer','Chaxlash','Sklad','Q.TEP'];
+
+  // grid
+  [0,5,10,15,20,25].forEach(t=>{
+    if(t>maxV+3) return;
+    const y=pt+cH-sy(t);
+    const line=svgEl('line',{x1:pl,y1:y,x2:pl+cW,y2:y,stroke:t===0?'#C8C2B8':'#E2DDD4','stroke-width':t===0?1.5:1,'stroke-dasharray':t===0?'':'4 3'});
+    svg.appendChild(line);
+    if(t>0){
+      const txt=svgEl('text',{x:pl-5,y:y+4,'text-anchor':'end',fill:'#8CA496','font-size':'9','font-family':'Plus Jakarta Sans'});
+      txt.textContent=t;svg.appendChild(txt);
+    }
+  });
+
+  // axes
+  svg.appendChild(svgEl('line',{x1:pl,y1:pt,x2:pl,y2:pt+cH,stroke:'#B4B0A8','stroke-width':'1.5'}));
+  svg.appendChild(svgEl('line',{x1:pl,y1:pt+cH,x2:pl+cW,y2:pt+cH,stroke:'#B4B0A8','stroke-width':'1.5'}));
+
+  const bars1=[],bars2=[];
+
+  WEEKLY.forEach((d,i)=>{
+    const gx=pl+i*gW+gW/2;
+    const x1=gx-bW-2;
+    const x2=gx+2;
+    const h1=sy(d.k);const h2=sy(d.b);
+    const y1=pt+cH-h1;const y2=pt+cH-h2;
+    const baseY=pt+cH;
+
+    const r1=svgEl('rect',{x:x1,y:baseY,width:bW,height:0,rx:3,fill:'#34C377',opacity:'0.9'});
+    const r2=svgEl('rect',{x:x2,y:baseY,width:bW,height:0,rx:3,fill:'#B5741A',opacity:'0.9'});
+    svg.appendChild(r1);svg.appendChild(r2);
+    bars1.push({el:r1,h:h1,y:y1,baseY});
+    bars2.push({el:r2,h:h2,y:y2,baseY});
+
+    if(d.k>0){
+      const vt=svgEl('text',{x:x1+bW/2,y:y1-4,'text-anchor':'middle',fill:'#287D4F','font-size':'9','font-weight':'600','font-family':'Plus Jakarta Sans'});
+      vt.textContent=d.k;svg.appendChild(vt);
+    }
+    if(d.b>0){
+      const vt=svgEl('text',{x:x2+bW/2,y:y2-4,'text-anchor':'middle',fill:'#B5741A','font-size':'9','font-weight':'600','font-family':'Plus Jakarta Sans'});
+      vt.textContent=d.b;svg.appendChild(vt);
+    }
+
+    const xt=svgEl('text',{x:gx,y:pt+cH+15,'text-anchor':'middle',fill:'#475E54','font-size':'9','font-weight':'500','font-family':'Plus Jakarta Sans'});
+    xt.textContent=shortN[i];svg.appendChild(xt);
+  });
+
+  raf2(()=>{
+    bars1.forEach(({el,h,y,baseY},i)=>{
+      if(h>0) rafAnim(0,h,900,i*90,(v)=>{
+        el.setAttribute('height',v);
+        el.setAttribute('y',baseY-v);
+      });
+    });
+    bars2.forEach(({el,h,y,baseY},i)=>{
+      if(h>0) rafAnim(0,h,900,i*90+50,(v)=>{
+        el.setAttribute('height',v);
+        el.setAttribute('y',baseY-v);
+      });
+    });
+  });
+}
+
+/* ─── CYCLE TIME CHART ──────────────────────────────── */
+function drawCycle(){
+  const svg=document.getElementById('cycle-chart');
+  if(!svg) return;
+  svg.innerHTML='';
+  const W=330,H=210,pt=10,pr=50,pb=36,pl=72;
+  const cW=W-pl-pr,cH=H-pt-pb;
+  const maxV=4;
+  const sx=v=>(v/maxV)*cW;
+  const rowH=cH/CYCLE.length;
+
+  [0,1,2,3,4].forEach(t=>{
+    const x=pl+sx(t);
+    svg.appendChild(svgEl('line',{x1:x,y1:pt,x2:x,y2:pt+cH,stroke:t===0?'#C8C2B8':'#E2DDD4','stroke-width':t===0?1.5:1,'stroke-dasharray':t===0?'':'4 3'}));
+    const tx=svgEl('text',{x:x,y:pt+cH+14,'text-anchor':'middle',fill:'#8CA496','font-size':'9','font-family':'Plus Jakarta Sans'});
+    tx.textContent=t;svg.appendChild(tx);
+  });
+
+  svg.appendChild(svgEl('line',{x1:pl,y1:pt,x2:pl,y2:pt+cH,stroke:'#B4B0A8','stroke-width':'1.5'}));
+  svg.appendChild(svgEl('line',{x1:pl,y1:pt+cH,x2:pl+cW+10,y2:pt+cH,stroke:'#B4B0A8','stroke-width':'1.5'}));
+
+  const tx2=svgEl('text',{x:pl+cW/2,y:H-3,'text-anchor':'middle',fill:'#8CA496','font-size':'8.5','font-family':'Plus Jakarta Sans'});
+  tx2.textContent='kun (days)';svg.appendChild(tx2);
+
+  const barEls=[];
+
+  CYCLE.forEach((d,i)=>{
+    const cy=pt+i*rowH+rowH/2;
+    const bH=rowH*0.48;
+    const bY=cy-bH/2;
+    const color=cycleColor(d.v);
+
+    const lbl=svgEl('text',{x:pl-6,y:cy+4,'text-anchor':'end',fill:'#475E54','font-size':'9','font-weight':'500','font-family':'Plus Jakarta Sans'});
+    lbl.textContent=d.name;svg.appendChild(lbl);
+
+    if(d.v>0){
+      const bar=svgEl('rect',{x:pl,y:bY,width:0,height:bH,rx:3,fill:color,opacity:'0.88'});
+      svg.appendChild(bar);
+      const vt=svgEl('text',{x:pl+4,y:cy+4,fill:color,'font-size':'9','font-weight':'700','font-family':'Plus Jakarta Sans'});
+      vt.textContent=d.v;svg.appendChild(vt);
+      barEls.push({el:bar,vt,w:sx(d.v),d});
+    } else {
+      const dash=svgEl('text',{x:pl+6,y:cy+4,fill:'#B4C8BE','font-size':'9','font-family':'Plus Jakarta Sans'});
+      dash.textContent='—';svg.appendChild(dash);
+    }
+  });
+
+  raf2(()=>{
+    barEls.forEach(({el,vt,w,d},i)=>{
+      rafAnim(0,w,900,i*90,(v,done)=>{
+        el.setAttribute('width',v);
+        vt.setAttribute('x',pl+v+4);
+      });
+    });
+  });
+}
+
+/* ─── HOURLY CHART ───────────────────────────────────── */
+function drawHourly(data=HOURLY,svgId='hourly-chart'){
+  const svg=document.getElementById(svgId);
+  if(!svg) return;
+  svg.innerHTML='';
+  const W=300,H=195,pt=8,pr=44,pb=14,pl=54;
+  const cW=W-pl-pr,cH=H-pt-pb;
+  const maxV=Math.max(...data.map(d=>d.v),1);
+  const sx=v=>(v/maxV)*cW;
+  const rowH=cH/data.length;
+
+  svg.appendChild(svgEl('line',{x1:pl,y1:pt,x2:pl,y2:pt+cH,stroke:'#B4B0A8','stroke-width':'1.5'}));
+
+  const barEls=[];
+  data.forEach((d,i)=>{
+    const cy=pt+i*rowH+rowH/2;
+    const bH=rowH*0.52;
+    const bY=cy-bH/2;
+    const isMax=d.v===maxV;
+    const col=isMax?'#287D4F':'#34C377';
+
+    const lbl=svgEl('text',{x:pl-6,y:cy+4,'text-anchor':'end',fill:'#475E54','font-size':'9','font-weight':'500','font-family':'Plus Jakarta Sans'});
+    lbl.textContent=d.lbl;svg.appendChild(lbl);
+
+    const bar=svgEl('rect',{x:pl,y:bY,width:0,height:bH,rx:3,fill:col,opacity:isMax?'1':'0.78'});
+    svg.appendChild(bar);
+
+    const vt=svgEl('text',{x:pl+4,y:cy+4,fill:'#475E54','font-size':'9','font-weight':'700','font-family':'Plus Jakarta Sans'});
+    vt.textContent=d.v;svg.appendChild(vt);
+    barEls.push({el:bar,vt,w:sx(d.v)});
+  });
+
+  raf2(()=>{
+    barEls.forEach(({el,vt,w},i)=>{
+      rafAnim(0,w,850,i*75,(v)=>{
+        el.setAttribute('width',v);
+        vt.setAttribute('x',pl+v+4);
+      });
+    });
+  });
+}
+
+function drawHourlyK(){drawHourly(HOURLY_K,'hourly-chart-k');}
+
+/* ─── CATEGORY CHART ─────────────────────────────────── */
+function drawCategory(svgId='category-chart'){
+  const svg=document.getElementById(svgId);
+  if(!svg) return;
+  svg.innerHTML='';
+  const W=580,H=220,pt=16,pr=70,pb=36,pl=158;
+  const cW=W-pl-pr,cH=H-pt-pb;
+  const maxV=Math.max(...CATS.map(d=>d.v));
+  const sx=v=>(v/maxV)*cW;
+  const rowH=cH/CATS.length;
+
+  [0,20,40,60,80].forEach(t=>{
+    const x=pl+sx(t);
+    if(x>pl+cW+5) return;
+    svg.appendChild(svgEl('line',{x1:x,y1:pt,x2:x,y2:pt+cH,stroke:'#E2DDD4','stroke-width':'1','stroke-dasharray':'4 3'}));
+    const tx=svgEl('text',{x:x,y:pt+cH+14,'text-anchor':'middle',fill:'#8CA496','font-size':'9','font-family':'Plus Jakarta Sans'});
+    tx.textContent=t;svg.appendChild(tx);
+  });
+
+  svg.appendChild(svgEl('line',{x1:pl,y1:pt,x2:pl,y2:pt+cH,stroke:'#B4B0A8','stroke-width':'1.5'}));
+  svg.appendChild(svgEl('line',{x1:pl,y1:pt+cH,x2:pl+cW,y2:pt+cH,stroke:'#B4B0A8','stroke-width':'1.5'}));
+
+  const barEls=[];
+  CATS.forEach((d,i)=>{
+    const cy=pt+i*rowH+rowH/2;
+    const bH=rowH*0.5;
+    const bY=cy-bH/2;
+
+    const lbl=svgEl('text',{x:pl-8,y:cy+4,'text-anchor':'end',fill:'#475E54','font-size':'10','font-weight':'500','font-family':'Plus Jakarta Sans'});
+    lbl.textContent=d.lbl;svg.appendChild(lbl);
+
+    const bar=svgEl('rect',{x:pl,y:bY,width:0,height:bH,rx:4,fill:d.c,opacity:'0.88'});
+    svg.appendChild(bar);
+
+    const vtInner=d.pct?`${d.v}<tspan fill="#C48000" font-size="8.5" font-weight="600"> (${d.pct})</tspan>`:null;
+    const vt=svgEl('text',{x:pl+4,y:cy+4,fill:'#1A2822','font-size':'10','font-weight':'700','font-family':'Plus Jakarta Sans'},vtInner);
+    if(!vtInner) vt.textContent=d.v;
+    svg.appendChild(vt);
+    barEls.push({el:bar,vt,w:sx(d.v)});
+  });
+
+  raf2(()=>{
+    barEls.forEach(({el,vt,w},i)=>{
+      rafAnim(0,w,900,i*110,(v)=>{
+        el.setAttribute('width',v);
+        vt.setAttribute('x',pl+v+6);
+      });
+    });
+  });
+}
+
+/* ─── TENDENCY LINE CHART ────────────────────────────── */
+function drawTendency(){
+  const svg=document.getElementById('tendency-chart');
+  if(!svg) return;
+  svg.innerHTML='';
+  const W=900,H=200,pt=22,pr=24,pb=44,pl=52;
+  const cW=W-pl-pr, cH=H-pt-pb;
+  const baseY=pt+cH;
+
+  const MONTHS=['Dek 2025','Yan 2026','Fev 2026','Mar 2026','Apr 2026','May 2026'];
+  const VALS=[0,0,0,0,2,93.8];
+  const n=VALS.length;
+  const step=cW/(n-1);
+  const px=i=>pl+i*step;
+  const py=v=>pt+cH*(1-v/100);
+
+  // Y gridlines & labels
+  [0,25,50,75,100].forEach(t=>{
+    const y=py(t);
+    svg.appendChild(svgEl('line',{x1:pl,y1:y,x2:pl+cW,y2:y,stroke:t===0?'#C8C2B8':'#E2DDD4','stroke-width':t===0?1.5:1,'stroke-dasharray':t===0?'':'4 3'}));
+    const tx=svgEl('text',{x:pl-6,y:y+4,'text-anchor':'end',fill:'#8CA496','font-size':'9','font-family':'Plus Jakarta Sans'});
+    tx.textContent=t+'%';svg.appendChild(tx);
+  });
+
+  // Axes
+  svg.appendChild(svgEl('line',{x1:pl,y1:pt,x2:pl,y2:baseY,stroke:'#B4B0A8','stroke-width':'1.5'}));
+  svg.appendChild(svgEl('line',{x1:pl,y1:baseY,x2:pl+cW,y2:baseY,stroke:'#B4B0A8','stroke-width':'1.5'}));
+
+  // Build smooth cubic bezier path
+  const pts=VALS.map((v,i)=>({x:px(i),y:py(v)}));
+  let d=`M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+  for(let i=1;i<pts.length;i++){
+    const p=pts[i-1],c=pts[i];
+    const cpx=((p.x+c.x)/2).toFixed(1);
+    d+=` C${cpx},${p.y.toFixed(1)} ${cpx},${c.y.toFixed(1)} ${c.x.toFixed(1)},${c.y.toFixed(1)}`;
+  }
+
+  // Area fill (static, instant)
+  const areaD=d+` L${pts[n-1].x.toFixed(1)},${baseY} L${pts[0].x.toFixed(1)},${baseY} Z`;
+  svg.appendChild(svgEl('path',{d:areaD,fill:'rgba(52,195,119,0.08)',stroke:'none'}));
+
+  // Line path (animated)
+  const lineEl=svgEl('path',{d,fill:'none',stroke:'#34C377','stroke-width':'2.5','stroke-linecap':'round','stroke-linejoin':'round'});
+  svg.appendChild(lineEl);
+
+  // X-axis month labels
+  MONTHS.forEach((m,i)=>{
+    const tx=svgEl('text',{x:px(i).toFixed(1),y:baseY+15,'text-anchor':'middle',fill:'#475E54','font-size':'8.5','font-weight':'500','font-family':'Plus Jakarta Sans'});
+    tx.textContent=m;svg.appendChild(tx);
+  });
+
+  // Dots and value labels (start opacity 0)
+  const dotEls=[];
+  pts.forEach((p,i)=>{
+    const v=VALS[i];
+    const isHot=v>0;
+    const dot=svgEl('circle',{cx:p.x.toFixed(1),cy:p.y.toFixed(1),r:isHot?5.5:3,fill:isHot?'#287D4F':'#C8DDD6',stroke:'#fff','stroke-width':'2',opacity:'0'});
+    svg.appendChild(dot);dotEls.push({el:dot,delay:i});
+    if(v>0){
+      const vt=svgEl('text',{x:p.x.toFixed(1),y:(p.y-11).toFixed(1),'text-anchor':'middle',fill:'#287D4F','font-size':'10','font-weight':'800','font-family':'Plus Jakarta Sans',opacity:'0'});
+      vt.textContent=v+'%';svg.appendChild(vt);dotEls.push({el:vt,delay:i});
+    }
+  });
+
+  // Animate: line draws first, then dots appear
+  raf2(()=>{
+    try{
+      const len=lineEl.getTotalLength();
+      lineEl.setAttribute('stroke-dasharray',len);
+      lineEl.setAttribute('stroke-dashoffset',len);
+      rafAnim(0,1,1500,0,t=>lineEl.setAttribute('stroke-dashoffset',(len*(1-t)).toFixed(1)));
+    }catch(e){}
+    dotEls.forEach(({el,delay})=>{
+      rafAnim(0,1,280,900+delay*80,t=>el.setAttribute('opacity',t.toFixed(3)));
+    });
+  });
+}
+
+/* ─── NAVIGATION ─────────────────────────────────────── */
+const navItems=document.querySelectorAll('.nav-item');
+const sections=document.querySelectorAll('.section');
+const drawn=new Set();
+
+function showSection(id){
+  sections.forEach(s=>s.classList.remove('active'));
+  navItems.forEach(n=>n.classList.remove('active'));
+  const sec=document.getElementById(id);
+  const nav=document.querySelector(`[data-target="${id}"]`);
+  if(sec){
+    sec.classList.add('active');
+    animateCounters(sec);
+    animateProgs(sec);
+    if(!drawn.has(id)){
+      drawn.add(id);
+      if(id==='ishlab-chiqarish') raf2(()=>{drawGrouped();drawCycle();drawTendency();});
+      if(id==='klient-menejer') raf2(()=>{drawHourly();drawCategory('tg-cat-chart');});
+    }
+  }
+  if(nav) nav.classList.add('active');
+}
+
+navItems.forEach(item=>item.addEventListener('click',()=>showSection(item.dataset.target)));
+
+/* ─── IC / TG TABS (same-data, no pane swap) ─────────── */
+document.querySelectorAll('[data-ictab]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    btn.closest('.tabs-bar').querySelectorAll('[data-ictab]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+/* ─── TABS (pane-swapping) ───────────────────────────── */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const pane=btn.dataset.tab;
+    if(!pane) return;
+    btn.closest('.section').querySelectorAll('.tab-btn[data-tab]').forEach(b=>b.classList.remove('active'));
+    btn.closest('.section').querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    const pEl=document.getElementById('tab-'+pane);
+    if(pEl){
+      pEl.classList.add('active');
+      animateCounters(pEl);
+      animateProgs(pEl);
+      if(pane==='oylik'&&!drawn.has('oylik')){drawn.add('oylik');raf2(drawHourly);}
+      if(pane==='kunlik'&&!drawn.has('kunlik')){drawn.add('kunlik');raf2(drawHourlyK);}
+    }
+  });
+});
+
+/* ─── KUNLIK PENDING INFO ────────────────────────────── */
+function renderKunlikPending(){
+  const el=document.getElementById('kunlik-hal-sub');
+  if(!el) return;
+  const jami=115,kutilayotgan=2;
+  const pct=(kutilayotgan/jami*100).toFixed(2);
+  el.innerHTML=`hal qilingan<span class="kpi-pending-note">${kutilayotgan} ta kutilmoqda (${pct}%)</span>`;
+}
+
+/* ─── INIT ────────────────────────────────────────────── */
+renderDeptCards();
+renderTable();
+renderKunlikPending();
+raf2(()=>{
+  drawGrouped();
+  drawCycle();
+  drawTendency();
+  drawn.add('ishlab-chiqarish');
+  drawn.add('oylik');
+  const sec1=document.getElementById('ishlab-chiqarish');
+  animateCounters(sec1);
+  animateProgs(sec1);
+});
+</script>
+</body>
+</html>

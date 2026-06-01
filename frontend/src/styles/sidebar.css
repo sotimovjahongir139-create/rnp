@@ -1,0 +1,75 @@
+.sidebar {
+  width: var(--sb-w);
+  background: var(--sb-bg);
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  border-right: 1px solid var(--sb-border);
+}
+.sb-logo {
+  padding: 26px 20px 22px;
+  border-bottom: 1px solid var(--sb-border);
+}
+.logo-wrap { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, #34C377, #1E6B3E);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logo-icon svg { width: 19px; height: 19px; }
+.logo-name { font-size: 1.05rem; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+.logo-sub {
+  font-size: 0.6rem;
+  color: var(--sb-text);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  margin-top: 1px;
+  opacity: 0.7;
+}
+.sb-nav { flex: 1; padding: 14px 10px; overflow-y: auto; }
+.sb-sec-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--sb-text);
+  opacity: 0.45;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 10px 10px 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.18s;
+  margin-bottom: 1px;
+  position: relative;
+  user-select: none;
+}
+.nav-item:hover { background: rgba(255,255,255,0.05); }
+.nav-item.active { background: var(--sb-active-bg); }
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 7px; bottom: 7px;
+  width: 3px;
+  background: var(--sb-active-bar);
+  border-radius: 0 2px 2px 0;
+}
+.nav-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.nav-dot.g  { background: #34C377; box-shadow: 0 0 7px rgba(52,195,119,0.55); }
+.nav-dot.gr { background: #3A5548; }
+.nav-label {
+  font-size: 0.81rem;
+  font-weight: 500;
+  color: var(--sb-text);
+  transition: color 0.18s;
+  flex: 1;
+}
+.nav-item.active .nav-label { color: var(--sb-text-active); font-weight: 600; }

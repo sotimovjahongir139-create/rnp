@@ -1,0 +1,30 @@
+.charts-row   { display: grid; grid-template-columns: 60fr 40fr; gap: 14px; margin-bottom: 24px; }
+.charts-row-3 { display: grid; grid-template-columns: 40fr 30fr 30fr; gap: 14px; margin-bottom: 24px; }
+
+.chart-card {
+  background: var(--card-bg);
+  border-radius: var(--r16);
+  padding: 20px 22px;
+  box-shadow: var(--cs);
+  border: 1px solid var(--border-l);
+}
+.chart-title { font-size: 0.84rem; font-weight: 700; color: var(--t1); margin-bottom: 3px; }
+.chart-sub   { font-size: 0.69rem; color: var(--t3); margin-bottom: 16px; }
+
+.legend    { display: flex; gap: 14px; margin-bottom: 14px; }
+.leg-item  { display: flex; align-items: center; gap: 5px; font-size: 0.69rem; color: var(--t2); font-weight: 500; }
+.leg-dot   { width: 10px; height: 10px; border-radius: 3px; }
+
+/* SKU table inside chart-card */
+.sku-table { width: 100%; border-collapse: collapse; }
+.sku-table thead th {
+  font-size: 0.6rem; font-weight: 700; color: var(--t3);
+  text-transform: uppercase; letter-spacing: 0.07em;
+  padding: 0 8px 8px; border-bottom: 1px solid var(--border); text-align: left;
+}
+.sku-table tbody tr { border-bottom: 1px solid var(--border-l); transition: background 0.14s; }
+.sku-table tbody tr:last-child { border-bottom: none; }
+.sku-table tbody tr:hover td  { background: var(--main-bg); }
+.sku-dept  { font-size: 0.75rem; font-weight: 700; color: var(--t1); padding: 7px 8px; white-space: nowrap; vertical-align: middle; }
+.pills-cell  { padding: 6px 8px; vertical-align: middle; }
+.pills-inner { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }

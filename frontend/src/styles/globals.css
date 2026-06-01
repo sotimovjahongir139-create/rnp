@@ -1,0 +1,115 @@
+@import './sidebar.css';
+@import './cards.css';
+@import './charts.css';
+@import './tables.css';
+@import './scripts.css';
+@import './qc.css';
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sb-w: 220px;
+  --sb-bg: #182E25;
+  --sb-border: rgba(255,255,255,0.07);
+  --sb-text: #8FBDA4;
+  --sb-text-active: #FFFFFF;
+  --sb-active-bg: rgba(52,195,119,0.13);
+  --sb-active-bar: #34C377;
+  --main-bg: #EEE9DF;
+  --card-bg: #FFFFFF;
+  --cs: 0 1px 3px rgba(0,0,0,0.06), 0 4px 18px rgba(0,0,0,0.05);
+  --cs-h: 0 4px 14px rgba(0,0,0,0.10), 0 14px 36px rgba(0,0,0,0.08);
+  --green: #287D4F;
+  --green-l: #E5F4EC;
+  --green-b: #34C377;
+  --gold: #B5741A;
+  --gold-l: #FDF3E0;
+  --red: #C03434;
+  --red-l: #FDECEC;
+  --amber: #C48000;
+  --t1: #182822;
+  --t2: #475E54;
+  --t3: #8CA496;
+  --border: #DDD8CE;
+  --border-l: #E8E3DA;
+  --r8: 8px; --r12: 12px; --r16: 16px; --r20: 20px;
+}
+
+html { font-size: 15px; }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--main-bg);
+  color: var(--t1);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.app { display: flex; min-height: 100vh; }
+
+.main {
+  margin-left: var(--sb-w);
+  flex: 1;
+  min-height: 100vh;
+}
+.main::-webkit-scrollbar { width: 5px; }
+.main::-webkit-scrollbar-track { background: transparent; }
+.main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.section {
+  display: none;
+  padding: 30px 34px;
+  min-height: 100vh;
+  animation: fadeUp 0.28s ease;
+}
+.section.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.sec-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+.sec-title {
+  font-size: 1.38rem;
+  font-weight: 800;
+  color: var(--t1);
+  letter-spacing: -0.015em;
+}
+
+.sec-divider { height: 1px; background: var(--border); margin: 30px 0; }
+
+.mono { font-family: 'DM Mono', monospace; }
+
+.ph-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 68vh;
+  gap: 18px;
+}
+.ph-icon {
+  width: 96px; height: 96px;
+  background: var(--card-bg);
+  border-radius: 26px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--cs);
+  border: 1px solid var(--border-l);
+}
+.ph-title { font-size: 1.45rem; font-weight: 800; color: var(--t1); }
+.ph-desc  { font-size: 0.86rem; color: var(--t3); font-weight: 500; }
+.ph-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 9px 22px;
+  font-size: 0.78rem; font-weight: 700;
+  color: var(--t2);
+  cursor: default;
+  box-shadow: var(--cs);
+}

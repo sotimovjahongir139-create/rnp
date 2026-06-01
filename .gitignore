@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment files (NEVER commit these)
+.env
+backend/.env
+*.env.local
+
+# Build output
+frontend/dist/
+frontend/.vite/
+
+# Logs
+logs/
+*.log
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python virtualenv
+venv/
+.venv/
+env/
