@@ -133,10 +133,17 @@ logs to `etl/logs/`, writes one period's aggregates, exits non-zero on failure.
   filter `origin == ru.whatcrm.telegram`, build conversation turns, compute response_rate +
   avg/median response minutes. Write `telegram_stats` + `telegram_response_details`. (Reads the
   token from env, **not** hardcoded as the original did.)
-- **`production.py`** — connect to `arconper_arcon` (MySQL, read-only), run the four verified
-  queries from `dashboard_queries.txt` parameterised by date window, map `production_jarayon`
-  names to the dashboard's six departments, compute kirdi/bajarildi/efficiency + the sklad chain.
-  Write `production_stats` + `production_chain`.
+- **`production.py`** — runs the four verified `dashboard_queries.txt` queries against
+  `arconper_arcon`, maps `production_jarayon` names to the six departments, computes
+  kirdi/bajarildi/efficiency + the sklad chain → `production_stats` + `production_chain`.
+  **DEPLOYMENT (verified networking constraint):** odin **cannot** make outbound `:3306`
+  connections — Contabo blocks it upstream (tested: both `de.ahost.cloud` and `db4free.net`
+  timeout; odin egress on 443 is fine). So this reader **runs on the cPanel side** (via cPanel
+  Cron Jobs), connects to MySQL at `localhost` as the read-only user **`arconper_ro`** (created
+  + verified 2026-06-02: SELECT-only on `arconper_arcon`, returns the 3,178-row dataset), and
+  **pushes** the aggregated JSON to an odin backend ingest endpoint over **HTTPS/443** with a
+  shared secret. (cPanel-side language: PHP is guaranteed available; Python if present.) Creds +
+  full note live on odin at `~/rnp/factory-access.env` (mode 600, gitignored).
 - **`qc.py`** — read `sifat-nazorati`'s Postgres `entries` (read-only), aggregate by date / sku /
   reason / category. Write `qc_stats` + `qc_defects`. (Alternative considered: call the QC app's
   own analytics HTTP API — rejected, direct read is simpler and same box.)
@@ -210,9 +217,12 @@ Each phase ends with a **demoable, verified** result.
 ## 15. Open items / risks
 
 - **AmoCRM token rotation** (blocks Phase 4 go-live). Owner: user.
-- **Remote MySQL** for factory DB: the implementer enables it at Phase 3 via the cPanel client
-  portal (clients.ahost.uz, login on file) — add allow-list `62.169.31.240` + create a read-only
-  user; else run the reader on the cPanel side via its Cron. (Tested today via phpMyAdmin SSO.)
+- **Factory DB access — RESOLVED + verified (2026-06-02).** odin cannot reach `:3306` (Contabo
+  upstream block), so direct remote MySQL is out. A read-only user **`arconper_ro`** (SELECT on
+  `arconper_arcon`) was created in cPanel and verified end-to-end (3,178 rows, workshop split
+  matches). Access method = **cPanel Cron reader → HTTPS push to odin**. Creds at
+  `odin:~/rnp/factory-access.env`. cPanel: account `arconper`, SSO via clients.ahost.uz.
+  (A leftover remote-MySQL grant for `62.169.31.240` exists but is unused — odin can't egress 3306.)
 - **`arconper_perfect`** (second cPanel DB) — purpose unknown; inspect at Phase 3, may hold extra data.
 - **Call manager scope: `Asadbek` only (locked).**
 - **AmoCRM events retention:** events fetch works for recent months; if older history needed, confirm
