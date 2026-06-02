@@ -101,3 +101,7 @@ AmoCRM API / calls_parser.py
         ↓
     React Dashboard
 ```
+
+## Auto-deploy
+
+Pushes to `main` are deployed to the server automatically within ~5 min (poll-based) and reported to Telegram `@johnupdatebot`.
