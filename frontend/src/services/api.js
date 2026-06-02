@@ -22,7 +22,7 @@ const MOCK_SCRIPTS = [
   },
 ];
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 async function get(path) {
