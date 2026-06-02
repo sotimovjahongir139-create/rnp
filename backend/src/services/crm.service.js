@@ -3,8 +3,10 @@ import { query } from '../config/db.js';
 const HOUR_KEYS = [['09–11','h_09_11'],['11–13','h_11_13'],['13–15','h_13_15'],['15–17','h_15_17'],['17–19','h_17_19'],['19–21','h_19_21'],['21–23','h_21_23']];
 
 async function latestCall(periodType) {
+  // Prefer the most recent period that actually has calls — on the 1st/2nd of a
+  // month the current month-to-date is ~0, which would read as a broken screen.
   const rows = await query(
-    'SELECT * FROM call_stats WHERE period_type=$1 ORDER BY period_date DESC LIMIT 1', [periodType]);
+    'SELECT * FROM call_stats WHERE period_type=$1 ORDER BY (total_calls > 0) DESC, period_date DESC LIMIT 1', [periodType]);
   return rows[0] || null;
 }
 
