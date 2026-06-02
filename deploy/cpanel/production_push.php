@@ -24,16 +24,27 @@
 // ---------------------------------------------------------------------------
 // Load config
 // ---------------------------------------------------------------------------
+// Config comes from a sibling config file if present, otherwise from environment
+// variables (lets the cPanel cron run a downloaded copy with secrets passed inline).
 $configPath = __DIR__ . '/production_push.config.php';
-if (!is_file($configPath)) {
-    fwrite(STDERR, "ERROR: config file not found: {$configPath}\n");
-    fwrite(STDERR, "Copy production_push.config.sample.php to production_push.config.php and fill it in.\n");
-    exit(1);
-}
-$config = require $configPath;
-if (!is_array($config)) {
-    fwrite(STDERR, "ERROR: config file did not return an array: {$configPath}\n");
-    exit(1);
+if (is_file($configPath)) {
+    $config = require $configPath;
+    if (!is_array($config)) {
+        fwrite(STDERR, "ERROR: config file did not return an array: {$configPath}\n");
+        exit(1);
+    }
+} else {
+    $config = array(
+        'db_host'            => getenv('FACTORY_DB_HOST') ?: 'localhost',
+        'db_port'            => getenv('FACTORY_DB_PORT') ?: 3306,
+        'db_name'            => getenv('FACTORY_DB_NAME') ?: 'arconper_arcon',
+        'db_user'            => getenv('FACTORY_DB_USER') ?: 'arconper_ro',
+        'db_pass'            => getenv('FACTORY_DB_PASS') ?: '',
+        'ingest_url'         => getenv('INGEST_URL') ?: '',
+        'ingest_secret'      => getenv('INGEST_SECRET') ?: '',
+        'ingest_host_header' => getenv('INGEST_HOST_HEADER') ?: null,
+        'verify_tls'         => getenv('VERIFY_TLS') === false ? true : (getenv('VERIFY_TLS') !== '0'),
+    );
 }
 
 $dbHost          = isset($config['db_host']) ? (string) $config['db_host'] : 'localhost';
