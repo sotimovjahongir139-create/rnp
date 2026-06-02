@@ -8,6 +8,10 @@ __pycache__/
 .env
 backend/.env
 *.env.local
+factory-access.env
+
+# Deploy runtime markers
+deploy/.tls-done
 
 # cPanel push real configs (NEVER commit secrets; keep the .sample.php tracked)
 deploy/cpanel/*.config.php
