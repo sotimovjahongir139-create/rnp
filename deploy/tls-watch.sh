@@ -8,9 +8,9 @@
 # lookup is the normal "keep waiting" path, not an error.
 set -uo pipefail
 
-DOMAIN=rnp.arcon-group.uz
+DOMAIN=rnp.arkon-group.uz
 WANT_IP=62.169.31.240
-EMAIL=admin@arcon-group.uz
+EMAIL=admin@arkon-group.uz
 DIR=/home/admin/rnp/deploy
 LOG="$DIR/tls-watch.log"
 MARKER="$DIR/.tls-done"
