@@ -24,15 +24,24 @@ def to_ts(dt):
 def from_ts(ts):
     return datetime.fromtimestamp(ts, tz=TZ).replace(tzinfo=None)
 
-now       = datetime.now()
-yesterday = now - timedelta(days=1)
+now = datetime.now()
 
-DAY_START   = yesterday.replace(hour=0,  minute=0,  second=0,  microsecond=0)
-DAY_END     = yesterday.replace(hour=23, minute=59, second=59, microsecond=0)
+if len(sys.argv) > 1:
+    try:
+        report_day = datetime.strptime(sys.argv[1], "%Y-%m-%d")
+        print(f"Manual sana: {report_day.strftime('%d.%m.%Y')}")
+    except ValueError:
+        print("Sana formati xato. Misol: python amocrm_april_report.py 2026-06-02")
+        sys.exit(1)
+else:
+    report_day = now - timedelta(days=1)
+
+DAY_START   = report_day.replace(hour=0,  minute=0,  second=0,  microsecond=0)
+DAY_END     = report_day.replace(hour=23, minute=59, second=59, microsecond=0)
 MONTH_START = DAY_START.replace(day=1)
 MONTH_END   = DAY_END
 
-STAT_DATE   = yesterday.date()
+STAT_DATE   = report_day.date()
 STAT_MONTH  = MONTH_START.date()
 
 BASE_URL    = f"https://{AMOCRM_DOMAIN}"
@@ -402,7 +411,7 @@ def main():
     save_monthly(STAT_MONTH, manager, m_stats)
     save_daily(STAT_DATE, manager, d_stats)
 
-    print("\n✓ TAYYOR!\n")
+    print("\nTAYYOR!\n")
 
 
 if __name__ == "__main__":
