@@ -1,79 +1,115 @@
-import { query } from '../config/db.js';
+import { analyticsPool } from '../config/db.js';
 
-const UZ_MONTHS = ['Yan','Fev','Mar','Apr','May','Iyn','Iyl','Avg','Sen','Okt','Noy','Dek'];
-
-async function windowRows(days) {
-  return query(
-    `SELECT workshop,
-            SUM(cards_in)::int AS cards_in, SUM(cards_done)::int AS cards_done,
-            SUM(qty_in)::bigint AS qty_in,  SUM(qty_done)::bigint AS qty_done,
-            AVG(avg_cycle_days) AS avg_cycle_days
-     FROM production_stats WHERE stat_date >= (current_date - $1::int)
-     GROUP BY workshop ORDER BY workshop`, [days]);
+export async function getDepartments() {
+  const [rows] = await analyticsPool.query(
+    `SELECT d.name, po.status, po.total_orders AS jami, po.completed_orders AS baj,
+            po.remaining_orders AS qol, po.efficiency AS pct, po.active_cards AS cards,
+            po.avg_cycle_days, po.incoming_week AS k, po.completed_week AS b
+     FROM production_orders po
+     JOIN departments d ON d.id = po.department_id
+     WHERE po.order_date = (SELECT MAX(order_date) FROM production_orders)
+     ORDER BY d.name`
+  );
+  return rows.map((r) => ({
+    name:  r.name,
+    st:    r.status || 'Normal',
+    jami:  r.jami   || 0,
+    baj:   r.baj    || 0,
+    qol:   r.qol    || 0,
+    pct:   Number(r.pct) || 0,
+    cards: r.cards  || 0,
+  }));
 }
 
-export async function departments() {
-  const rows = await windowRows(30);
-  return rows.map((r) => {
-    const jami = Number(r.qty_in), baj = Number(r.qty_done);
-    const pct = jami ? Math.round((baj / jami) * 10000) / 100 : 0;
-    return { name: r.workshop, st: pct >= 70 ? 'Normal' : 'Kritik', jami, baj, qol: jami - baj, pct, cards: r.cards_in };
-  });
-}
-
-export async function kpi() {
-  const rows = await windowRows(30);
-  const jamiZakaz = rows.reduce((s, r) => s + Number(r.qty_in), 0);
-  const jamiKartochka = rows.reduce((s, r) => s + r.cards_in, 0);
-  const bajarildi = rows.reduce((s, r) => s + Number(r.qty_done), 0);
-  const qoldi = jamiZakaz - bajarildi;
+export async function getProductionKPI() {
+  const [rows] = await analyticsPool.query(
+    `SELECT SUM(total_orders) AS jami, SUM(active_cards) AS kartochka,
+            SUM(completed_orders) AS baj, SUM(remaining_orders) AS qol
+     FROM production_orders
+     WHERE order_date = (SELECT MAX(order_date) FROM production_orders)`
+  );
+  const r = rows[0] || {};
+  const jami = r.jami || 0;
+  const baj  = r.baj  || 0;
+  const qol  = r.qol  || 0;
   return {
-    jamiZakaz, jamiKartochka, bajarildi, qoldi,
-    bajarildiPct: jamiZakaz ? Math.round((bajarildi / jamiZakaz) * 1000) / 10 : 0,
-    qoldiPct: jamiZakaz ? Math.round((qoldi / jamiZakaz) * 1000) / 10 : 0,
+    jamiZakaz:    jami,
+    jamiKartochka: r.kartochka || 0,
+    bajarildi:    baj,
+    qoldi:        qol,
+    bajarildiPct: jami ? +((baj / jami) * 100).toFixed(1) : 0,
+    qoldiPct:     jami ? +((qol / jami) * 100).toFixed(1) : 0,
   };
 }
 
-export async function weekly() {
-  const rows = await windowRows(7);
-  return rows.map((r) => {
-    const k = r.cards_in, b = r.cards_done;
-    const eff = k ? Math.round((b / k) * 100) : 0;
-    const holat = k === 0 ? 'Malumot yoq' : eff >= 70 ? 'Yaxshi' : 'Kritik';
-    const sikl = r.avg_cycle_days != null ? `${Number(r.avg_cycle_days).toFixed(1)} kun` : '—';
-    return { name: r.workshop, k, b, eff, holat, sikl, mm: '—' };
-  });
+export async function getWeekly() {
+  const [rows] = await analyticsPool.query(
+    `SELECT d.name, po.incoming_week AS k, po.completed_week AS b,
+            po.efficiency AS eff, po.status AS holat,
+            po.avg_cycle_days AS sikl, po.min_max_days AS mm
+     FROM production_orders po
+     JOIN departments d ON d.id = po.department_id
+     WHERE po.order_date = (SELECT MAX(order_date) FROM production_orders)
+     ORDER BY d.name`
+  );
+  return rows.map((r) => ({
+    name:  r.name,
+    k:     r.k    || 0,
+    b:     r.b    || 0,
+    eff:   Number(r.eff) || 0,
+    holat: r.holat || 'Normal',
+    sikl:  r.sikl ? r.sikl + ' kun' : '—',
+    mm:    r.mm   || '—',
+  }));
 }
 
-export async function cycle() {
-  const rows = await windowRows(30);
-  return rows.map((r) => ({ name: r.workshop, v: r.avg_cycle_days != null ? Number(Number(r.avg_cycle_days).toFixed(1)) : 0 }));
+export async function getCycle() {
+  const [rows] = await analyticsPool.query(
+    `SELECT d.name, po.avg_cycle_days AS v
+     FROM production_orders po
+     JOIN departments d ON d.id = po.department_id
+     WHERE po.order_date = (SELECT MAX(order_date) FROM production_orders)
+     ORDER BY d.name`
+  );
+  return rows.map((r) => ({ name: r.name, v: Number(r.v) || 0 }));
 }
 
-export async function tendency() {
-  const rows = await query(
-    `SELECT to_char(date_trunc('month', stat_date), 'YYYY-MM') AS mk,
-            SUM(qty_done)::bigint AS done, SUM(qty_in)::bigint AS total
-     FROM production_stats WHERE stat_date >= (date_trunc('month', current_date) - interval '5 months')
-     GROUP BY 1`, []);
-  const now = new Date();
-  const baseIdx = now.getUTCFullYear() * 12 + now.getUTCMonth();
-  const months = [], values = [];
-  for (let i = 5; i >= 0; i--) {
-    const idx = baseIdx - i;
-    const y = Math.floor(idx / 12), m = idx % 12;
-    const mk = `${y}-${String(m + 1).padStart(2, '0')}`;
-    months.push(`${UZ_MONTHS[m]} ${y}`);
-    const hit = rows.find((r) => r.mk === mk);
-    values.push(hit && Number(hit.total) ? Math.round((Number(hit.done) / Number(hit.total)) * 1000) / 10 : 0);
-  }
+export async function getTendency() {
+  const [rows] = await analyticsPool.query(
+    `SELECT DATE_FORMAT(order_date, '%b %Y') AS mon,
+            ROUND(AVG(efficiency), 1) AS val
+     FROM production_orders
+     GROUP BY YEAR(order_date), MONTH(order_date)
+     ORDER BY MIN(order_date) DESC
+     LIMIT 6`
+  );
+  const reversed = rows.reverse();
+  const months = reversed.map((r) => r.mon);
+  const values = reversed.map((r) => Number(r.val) || 0);
   const badges = [];
-  for (let i = 1; i < values.length; i++) {
+  for (let i = 1; i < reversed.length; i++) {
     const prev = values[i - 1], cur = values[i];
-    const val = prev === 0 ? (cur === 0 ? '0%' : '+100%') : `${cur - prev >= 0 ? '+' : ''}${Math.round(cur - prev)}%`;
-    badges.push({ from: `${months[i - 1].split(' ')[0]} → ${months[i].split(' ')[0]}`, val, type: cur > prev ? 'green' : cur < prev ? 'neutral' : 'amber' });
+    const diff = cur - prev;
+    badges.push({
+      from: `${months[i - 1]} → ${months[i]}`,
+      val:  (diff >= 0 ? '+' : '') + diff.toFixed(1) + '%',
+      type: diff > 0 ? 'green' : diff < 0 ? 'neutral' : 'amber',
+    });
   }
-  return { months, values, badges: badges.slice(-3) };
+  return { months, values, badges };
 }
 
-export async function sku() { return []; } // no verified source (documented risk)
+export async function getSKU() {
+  const [rows] = await analyticsPool.query(
+    `SELECT d.name AS dept, sa.model_code AS model
+     FROM sku_assignments sa
+     JOIN departments d ON d.id = sa.department_id
+     ORDER BY d.name, sa.model_code`
+  );
+  const map = {};
+  for (const r of rows) {
+    if (!map[r.dept]) map[r.dept] = { dept: r.dept, models: [] };
+    map[r.dept].models.push(r.model);
+  }
+  return Object.values(map);
+}

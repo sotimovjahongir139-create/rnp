@@ -1,8 +1,15 @@
-import * as crm from '../services/crm.service.js';
-const wrap = (fn) => async (_req, res, next) => { try { res.json(await fn()); } catch (e) { next(e); } };
-export const getMonthly      = wrap(crm.monthly);
-export const getDaily        = wrap(crm.daily);
-export const getHourly       = wrap(crm.hourly);
-export const getHourlyToday  = wrap(crm.hourlyToday);
-export const getTelegramKpi  = wrap(crm.telegramKpi);
-export const getTelegramCats = wrap(crm.telegramCategories);
+import * as crmService from '../services/crm.service.js';
+
+export const getMonthly     = wrap(crmService.getMonthlyStats);
+export const getDaily       = wrap(crmService.getDailyStats);
+export const getHourly      = wrap(crmService.getHourlyDistribution);
+export const getHourlyToday = wrap(crmService.getHourlyToday);
+export const getTelegramKPI = wrap(crmService.getTelegramKPI);
+export const getCategories  = wrap(crmService.getMessageCategories);
+
+function wrap(fn) {
+  return async (req, res, next) => {
+    try { res.json(await fn(req.query)); }
+    catch (e) { next(e); }
+  };
+}

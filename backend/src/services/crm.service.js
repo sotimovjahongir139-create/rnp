@@ -1,59 +1,156 @@
-import { query } from '../config/db.js';
+import { analyticsPool } from '../config/db.js';
 
-const HOUR_KEYS = [['09–11','h_09_11'],['11–13','h_11_13'],['13–15','h_13_15'],['15–17','h_15_17'],['17–19','h_17_19'],['19–21','h_19_21'],['21–23','h_21_23']];
-
-async function latestCall(periodType) {
-  // Prefer the most recent period that actually has calls — on the 1st/2nd of a
-  // month the current month-to-date is ~0, which would read as a broken screen.
-  const rows = await query(
-    'SELECT * FROM call_stats WHERE period_type=$1 ORDER BY (total_calls > 0) DESC, period_date DESC LIMIT 1', [periodType]);
-  return rows[0] || null;
-}
-
-function callShape(r) {
-  if (!r) return { jami: 0, kiruvchi: 0, chiquvchi: 0, otkazib: 0, qaytaChiqilgan: 0, qaytaChiqilmagan: 0,
-    otkazibPct: '0%', missedStats: { qaytaChiqilgan: 0, qaytaChiqilmagan: 0, qaytaAloqaDaq: '0' },
-    bars: [{ lbl: 'Javob berish', pct: 0, cls: 'g' }, { lbl: 'Qayta chiqish', pct: 0, cls: 'a' }, { lbl: 'Qayta chiqilmagan', pct: 0, cls: 'r' }] };
-  const total = r.total_calls;
+export async function getMonthlyStats({ month, year } = {}) {
+  const m = month || new Date().getMonth() + 1;
+  const y = year  || new Date().getFullYear();
+  const firstDay = `${y}-${String(m).padStart(2,'0')}-01`;
+  const [rows] = await analyticsPool.query(
+    `SELECT
+       SUM(total_calls)          AS jami,
+       SUM(incoming_calls)       AS kiruvchi,
+       SUM(outgoing_calls)       AS chiquvchi,
+       SUM(missed_calls)         AS otkazib,
+       SUM(recalled_calls)       AS qayta_chiqilgan,
+       SUM(not_recalled)         AS qayta_chiqilmagan,
+       ROUND(AVG(answer_rate),1) AS javob_pct,
+       ROUND(AVG(recall_rate),1) AS qayta_pct,
+       ROUND(AVG(avg_recall_minutes),1) AS avg_recall_daq
+     FROM amo_call_monthly_stats
+     WHERE stat_month = ?`,
+    [firstDay]
+  );
+  const r = rows[0];
   return {
-    jami: total, kiruvchi: r.incoming_answered, chiquvchi: r.outgoing_answered, otkazib: r.missed_clients,
-    qaytaChiqilgan: r.recalled_clients, qaytaChiqilmagan: r.not_recalled_clients,
-    otkazibPct: total ? `${((r.missed_clients / total) * 100).toFixed(1)}%` : '0%',
-    missedStats: { qaytaChiqilgan: r.recalled_clients, qaytaChiqilmagan: r.not_recalled_clients,
-      qaytaAloqaDaq: Number(r.avg_recall_minutes).toLocaleString('en-US') },
-    bars: [{ lbl: 'Javob berish', pct: Number(r.answer_rate), cls: 'g' },
-           { lbl: 'Qayta chiqish', pct: Number(r.recall_rate), cls: 'a' },
-           { lbl: 'Qayta chiqilmagan', pct: Number(r.no_recall_pct), cls: 'r' }],
+    jami:             r.jami              || 0,
+    kiruvchi:         r.kiruvchi          || 0,
+    chiquvchi:        r.chiquvchi         || 0,
+    otkazib:          r.otkazib           || 0,
+    qaytaChiqilgan:   r.qayta_chiqilgan   || 0,
+    qaytaChiqilmagan: r.qayta_chiqilmagan || 0,
+    otkazibPct:       (100 - (r.javob_pct || 0)).toFixed(1) + '%',
+    missedStats: {
+      qaytaChiqilgan:   r.qayta_chiqilgan   || 0,
+      qaytaChiqilmagan: r.qayta_chiqilmagan || 0,
+      qaytaAloqaDaq:    String(r.avg_recall_daq || '0'),
+    },
+    bars: [
+      { lbl: 'Javob berish',      pct: +(r.javob_pct  || 0), cls: 'g' },
+      { lbl: 'Qayta chiqish',     pct: +(r.qayta_pct  || 0), cls: 'a' },
+      { lbl: 'Qayta chiqilmagan', pct: r.qayta_chiqilgan && r.qayta_chiqilmagan
+          ? Math.round(r.qayta_chiqilmagan / (r.qayta_chiqilgan + r.qayta_chiqilmagan) * 100) : 0, cls: 'r' },
+    ],
   };
 }
 
-export async function monthly() { return callShape(await latestCall('monthly')); }
-export async function daily()   { return callShape(await latestCall('daily')); }
-
-function hourShape(r) { return HOUR_KEYS.map(([lbl, col]) => ({ lbl, v: r ? r[col] : 0 })); }
-export async function hourly()      { return hourShape(await latestCall('monthly')); }
-export async function hourlyToday() { return hourShape(await latestCall('daily')); }
-
-export async function telegramKpi() {
-  const [r] = await query('SELECT * FROM telegram_stats ORDER BY report_date DESC LIMIT 1', []);
-  if (!r) return { jamiXabarlar: 0, mijozXabarlari: 0, menejerJavoblari: 0, ortachaJavobVaqti: '0.00', javobDarajasi: '0%', murojaatHal: '0%' };
+export async function getDailyStats({ date } = {}) {
+  const d = date || new Date().toISOString().slice(0, 10);
+  const [rows] = await analyticsPool.query(
+    `SELECT
+       SUM(total_calls)          AS jami,
+       SUM(incoming_calls)       AS kiruvchi,
+       SUM(outgoing_calls)       AS chiquvchi,
+       SUM(missed_calls)         AS otkazib,
+       SUM(recalled_calls)       AS qayta_chiqilgan,
+       SUM(not_recalled)         AS qayta_chiqilmagan,
+       ROUND(AVG(answer_rate),1) AS javob_pct,
+       ROUND(AVG(recall_rate),1) AS qayta_pct,
+       ROUND(AVG(avg_recall_minutes),1) AS avg_recall_daq
+     FROM amo_call_daily_stats WHERE stat_date = ?`,
+    [d]
+  );
+  const r = rows[0];
   return {
-    jamiXabarlar: r.total_events, mijozXabarlari: r.client_messages, menejerJavoblari: r.manager_messages,
-    ortachaJavobVaqti: Number(r.avg_response_minutes || 0).toFixed(2),
-    javobDarajasi: r.client_messages ? `${Math.min(100, Math.round((r.manager_messages / r.client_messages) * 100))}%` : '0%',
-    murojaatHal: `${Number(r.response_rate).toFixed(2)}%`,
+    jami:             r.jami              || 0,
+    kiruvchi:         r.kiruvchi          || 0,
+    chiquvchi:        r.chiquvchi         || 0,
+    otkazib:          r.otkazib           || 0,
+    qaytaChiqilgan:   r.qayta_chiqilgan   || 0,
+    qaytaChiqilmagan: r.qayta_chiqilmagan || 0,
+    otkazibPct:       (100 - (r.javob_pct || 0)).toFixed(1) + '%',
+    missedStats: {
+      qaytaChiqilgan:   r.qayta_chiqilgan   || 0,
+      qaytaChiqilmagan: r.qayta_chiqilmagan || 0,
+      qaytaAloqaDaq:    String(r.avg_recall_daq || '0'),
+    },
+    bars: [
+      { lbl: 'Javob berish',      pct: +(r.javob_pct  || 0), cls: 'g' },
+      { lbl: 'Qayta chiqish',     pct: +(r.qayta_pct  || 0), cls: 'a' },
+      { lbl: 'Qayta chiqilmagan', pct: r.qayta_chiqilgan && r.qayta_chiqilmagan
+          ? Math.round(r.qayta_chiqilmagan / (r.qayta_chiqilgan + r.qayta_chiqilmagan) * 100) : 0, cls: 'r' },
+    ],
   };
 }
 
-export async function telegramCategories() {
-  const [r] = await query('SELECT * FROM telegram_stats ORDER BY report_date DESC LIMIT 1', []);
-  if (!r) return [];
-  const ct = r.client_turns;
+export async function getHourlyDistribution({ month, year } = {}) {
+  const m = month || new Date().getMonth() + 1;
+  const y = year  || new Date().getFullYear();
+  const [rows] = await analyticsPool.query(
+    `SELECT hour_slot AS lbl, SUM(call_count) AS v
+     FROM crm_hourly_stats
+     WHERE MONTH(stat_date)=? AND YEAR(stat_date)=?
+     GROUP BY hour_slot ORDER BY hour_slot`,
+    [m, y]
+  );
+  return rows;
+}
+
+export async function getHourlyToday() {
+  const today = new Date().toISOString().slice(0, 10);
+  const [rows] = await analyticsPool.query(
+    `SELECT hour_slot AS lbl, SUM(call_count) AS v
+     FROM crm_hourly_stats WHERE stat_date=?
+     GROUP BY hour_slot ORDER BY hour_slot`,
+    [today]
+  );
+  return rows;
+}
+
+export async function getTelegramKPI({ date } = {}) {
+  const d = date || new Date().toISOString().slice(0, 10);
+  const [rows] = await analyticsPool.query(
+    `SELECT
+       answered_turns          AS javob_berilgan,
+       waiting_turns           AS kutilayotgan,
+       response_rate           AS javob_pct,
+       avg_response_minutes    AS avg_daq,
+       median_response_minutes AS median_daq,
+       client_messages         AS client_msgs,
+       manager_messages        AS manager_msgs,
+       unique_contacts         AS unik_contacts
+     FROM telegram_daily_stats WHERE report_date = ?
+     ORDER BY loaded_at DESC LIMIT 1`,
+    [d]
+  );
+  const r = rows[0] || {};
+  return {
+    jamiXabarlar:      (r.client_msgs || 0) + (r.manager_msgs || 0),
+    mijozXabarlari:    r.client_msgs    || 0,
+    menejerJavoblari:  r.manager_msgs   || 0,
+    ortachaJavobVaqti: String(r.avg_daq    || '0'),
+    medianJavobDaq:    String(r.median_daq || '0'),
+    javobDarajasi:     (r.javob_pct || 0) + '%',
+    murojaatHal:       r.javob_berilgan
+      ? Math.round((r.javob_berilgan / ((r.javob_berilgan || 0) + (r.kutilayotgan || 0))) * 100) + '%'
+      : '0%',
+  };
+}
+
+export async function getMessageCategories({ date } = {}) {
+  const d = date || new Date().toISOString().slice(0, 10);
+  const [rows] = await analyticsPool.query(
+    `SELECT status, COUNT(*) AS v, ROUND(AVG(response_minutes),1) AS avg_daq
+     FROM telegram_response_details
+     WHERE report_date = ?
+     GROUP BY status`,
+    [d]
+  );
+  const answered = rows.find(r => r.status === 'ANSWERED') || { v: 0 };
+  const waiting  = rows.find(r => r.status === 'WAITING')  || { v: 0 };
   return [
-    { lbl: 'Menejer javoblari', v: r.manager_messages, c: '#3B6FD4' },
-    { lbl: 'Mijoz xabarlari', v: r.client_messages, c: '#34C377' },
-    { lbl: 'Mijoz murojaatlari', v: ct, c: '#7B5EA7' },
-    { lbl: 'Javob berilgan', v: r.answered_turns, c: '#287D4F' },
-    { lbl: 'Javob kutilayotgan', v: r.waiting_turns, c: '#C03434', pct: `${(ct ? (r.waiting_turns / ct) * 100 : 0).toFixed(2)}%` },
+    { lbl: 'Menejer javoblari',  v: answered.v || 0, c: '#3B6FD4' },
+    { lbl: 'Javob kutilayotgan', v: waiting.v  || 0, c: '#C03434',
+      pct: answered.v + waiting.v > 0
+        ? (waiting.v / (answered.v + waiting.v) * 100).toFixed(2) + '%'
+        : null },
   ];
 }

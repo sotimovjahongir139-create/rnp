@@ -1,7 +1,11 @@
-import { Router } from 'express';
-import { requireAuth } from '../middleware/auth.middleware.js';
-import { getKpi } from '../controllers/kpi.controller.js';
+import { Router }     from 'express';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { getDailyKPI, getMonthlyKPI } from '../controllers/kpi.controller.js';
+
 const router = Router();
-router.use(requireAuth);
-router.get('/', getKpi);
+router.use(authenticate);
+
+router.get('/daily',   getDailyKPI);
+router.get('/monthly', getMonthlyKPI);
+
 export default router;

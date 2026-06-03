@@ -1,8 +1,15 @@
-import * as prod from '../services/production.service.js';
-const wrap = (fn) => async (_req, res, next) => { try { res.json(await fn()); } catch (e) { next(e); } };
-export const getKpi         = wrap(prod.kpi);
-export const getDepartments = wrap(prod.departments);
-export const getWeekly      = wrap(prod.weekly);
-export const getCycle       = wrap(prod.cycle);
-export const getTendency    = wrap(prod.tendency);
-export const getSku         = wrap(prod.sku);
+import * as prodService from '../services/production.service.js';
+
+export const getDepartmentsCtrl = wrap(prodService.getDepartments);
+export const getProductionKPI   = wrap(prodService.getProductionKPI);
+export const getWeekly          = wrap(prodService.getWeekly);
+export const getCycle           = wrap(prodService.getCycle);
+export const getTendency        = wrap(prodService.getTendency);
+export const getSKU             = wrap(prodService.getSKU);
+
+function wrap(fn) {
+  return async (req, res, next) => {
+    try { res.json(await fn(req.query)); }
+    catch (e) { next(e); }
+  };
+}
